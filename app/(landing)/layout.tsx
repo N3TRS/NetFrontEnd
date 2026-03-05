@@ -21,12 +21,12 @@ export default function LandingPageLayout({
                     <a className="text-gray-400 px-3 flex items-center" href="/features">Caracteristicas</a>
                   </li>
                   <li className="px-3">
-                    <button className="font-semibold cursor-pointer bg-cards rounded-xl flex items-center py-3 px-3 hover:scale-105 transition-transform">
+                    <button className="font-semibold cursor-pointer bg-cards text-white rounded-xl flex items-center py-3 px-3 hover:scale-105 transition-transform">
                       Iniciar Sesion
                     </button>
                   </li>
                   <li className="px-3">
-                    <button className="font-semibold cursor-pointer bg-primary-action rounded-xl flex items-center py-3 px-3 hover:scale-105 transition-transform">
+                    <button className="font-semibold cursor-pointer bg-primary-action text-white rounded-xl flex items-center py-3 px-3 hover:scale-105 transition-transform">
                       Registrarse
                     </button>
                   </li>
