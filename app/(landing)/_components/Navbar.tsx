@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -34,8 +35,8 @@ export default function Navbar() {
 
         {/* CTAs */}
         <div className="flex items-center gap-4">
-          <Button className="glow-purple bg-accent text-accent-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
-            Log In
+          <Button asChild className="glow-purple bg-accent text-accent-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
+            <Link href="/login">Log In</Link>
           </Button>
           <Button className="glow-orange bg-primary text-primary-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
             Registrarse

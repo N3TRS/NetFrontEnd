@@ -53,6 +53,15 @@
   --color-noir-purple-bright: #5A189A;
   --color-noir-orange: #FF8B10;
   --color-noir-orange-light: #FCA160;
+
+  /* Custom animations */
+  --animate-blink: blink 4s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 84%, 100% { transform: scaleY(1); }
+  88%           { transform: scaleY(0.06); }
+  92%           { transform: scaleY(1); }
 }
 
 :root {
