@@ -16,6 +16,15 @@ interface FormState {
   password: string;
 }
 
+export interface LoginFormProps {
+  /** Called when the email input gains/loses focus (drives character reaction). */
+  onTypingChange?: (isTyping: boolean) => void;
+  /** Called whenever password visibility is toggled. */
+  onPasswordVisibilityChange?: (visible: boolean) => void;
+  /** Called on every password keystroke with the current value. */
+  onPasswordChange?: (value: string) => void;
+}
+
 // ─── Reusable sub-components ──────────────────────────────────────────────────
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -39,7 +48,11 @@ function GitHubIcon({ className }: { className?: string }) {
  * OmniCode sign-in page. Composed exclusively from shadcn/ui primitives
  * and lucide-react icons.
  */
-export default function LoginForm() {
+export default function LoginForm({
+  onTypingChange,
+  onPasswordVisibilityChange,
+  onPasswordChange,
+}: LoginFormProps) {
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -47,6 +60,13 @@ export default function LoginForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "password") onPasswordChange?.(value);
+  };
+
+  const togglePasswordVisibility = () => {
+    const next = !showPassword;
+    setShowPassword(next);
+    onPasswordVisibilityChange?.(next);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -101,8 +121,8 @@ export default function LoginForm() {
             autoComplete="email"
             placeholder="name@company.com"
             value={form.email}
-            onChange={handleChange}
-            required
+            onChange={handleChange}            onFocus={() => onTypingChange?.(true)}
+            onBlur={() => onTypingChange?.(false)}            required
           />
         </div>
 
@@ -127,12 +147,14 @@ export default function LoginForm() {
               placeholder="••••••••"
               value={form.password}
               onChange={handleChange}
+              onFocus={() => onTypingChange?.(true)}
+              onBlur={() => onTypingChange?.(false)}
               className="pr-10"
               required
             />
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
+              onClick={togglePasswordVisibility}
               aria-label={showPassword ? "Hide password" : "Show password"}
               className={cn(
                 "absolute right-3 top-1/2 -translate-y-1/2",
