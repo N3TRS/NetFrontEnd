@@ -23,6 +23,12 @@ interface FieldError {
   password?: string;
 }
 
+export interface RegistrationFormProps {
+  onTypingChange?: (isTyping: boolean) => void;
+  onPasswordVisibilityChange?: (visible: boolean) => void;
+  onPasswordChange?: (value: string) => void;
+}
+
 // ─── Input with leading icon ──────────────────────────────────────────────────
 
 function IconInput({
@@ -41,7 +47,11 @@ function IconInput({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function RegistrationForm() {
+export default function RegistrationForm({
+  onTypingChange,
+  onPasswordVisibilityChange,
+  onPasswordChange,
+}: RegistrationFormProps = {}) {
   const [form, setForm] = useState<FormState>({ fullName: "", email: "", password: "" });
   const [errors, setErrors] = useState<FieldError>({});
   const [isPending, setIsPending] = useState(false);
@@ -53,6 +63,7 @@ export default function RegistrationForm() {
     if (errors[name as keyof FieldError]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (name === "password") onPasswordChange?.(value);
   };
 
   const validate = (): boolean => {
@@ -82,6 +93,30 @@ export default function RegistrationForm() {
   };
 
   return (
+    <div className="flex flex-col gap-6">
+      {/* GitHub OAuth */}
+      <Button
+        type="button"
+        variant="outline"
+        className="h-12 w-full gap-3 rounded-xl border-primary/20 text-sm font-medium hover:bg-primary/5"
+        onClick={() => {
+          // TODO: trigger GitHub OAuth flow
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/github-icon-logo.png" alt="" aria-hidden="true" className="size-5 shrink-0" />
+        Sign up with GitHub
+      </Button>
+
+      {/* Divider */}
+      <div className="relative flex items-center">
+        <span className="flex-1 border-t border-white/10" />
+        <span className="px-3 text-xs uppercase tracking-widest text-muted-foreground">
+          O regístrate con email
+        </span>
+        <span className="flex-1 border-t border-white/10" />
+      </div>
+
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
       {/* Full Name */}
       <div className="flex flex-col gap-2">
@@ -114,6 +149,8 @@ export default function RegistrationForm() {
           placeholder="name@company.com"
           value={form.email}
           onChange={handleChange}
+          onFocus={() => onTypingChange?.(true)}
+          onBlur={() => onTypingChange?.(false)}
           aria-invalid={!!errors.email}
         />
         {errors.email && (
@@ -138,7 +175,11 @@ export default function RegistrationForm() {
           />
           <button
             type="button"
-            onClick={() => setShowPassword((v) => !v)}
+            onClick={() => {
+              const next = !showPassword;
+              setShowPassword(next);
+              onPasswordVisibilityChange?.(next);
+            }}
             aria-label={showPassword ? "Hide password" : "Show password"}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
           >
@@ -184,5 +225,6 @@ export default function RegistrationForm() {
         </Link>
       </div>
     </form>
+    </div>
   );
 }
