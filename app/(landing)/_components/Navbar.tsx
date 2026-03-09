@@ -17,7 +17,7 @@ export default function Navbar() {
           <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
             <Terminal className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span className="text-xl font-bold tracking-tight">OmniCode</span>
+          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-2xl font-bold">OmniCode</span>
         </div>
 
         {/* Nav links */}
@@ -38,8 +38,8 @@ export default function Navbar() {
           <Button asChild className="glow-purple bg-accent text-accent-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
             <Link href="/login">Log In</Link>
           </Button>
-          <Button className="glow-orange bg-primary text-primary-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
-            Registrarse
+          <Button asChild className="glow-orange bg-primary text-primary-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
+            <Link href="/register">Registrarse</Link>
           </Button>
         </div>
       </div>
