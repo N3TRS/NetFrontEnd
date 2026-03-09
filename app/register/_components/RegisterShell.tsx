@@ -42,7 +42,7 @@ export default function RegisterShell() {
         </div>
 
         <div className="w-full max-w-[400px]">
-          <h1 className="mb-8 text-3xl font-bold text-white text-center">Sign Up</h1>
+          <h1 className="mb-8 text-3xl font-bold text-white text-center">Registrate en OmniCode</h1>
           <RegistrationForm
             onTypingChange={setIsTyping}
             onPasswordVisibilityChange={setIsPasswordVisible}
