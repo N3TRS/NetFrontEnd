@@ -121,8 +121,8 @@ export default function LoginForm({
             autoComplete="email"
             placeholder="name@company.com"
             value={form.email}
-            onChange={handleChange}            onFocus={() => onTypingChange?.(true)}
-            onBlur={() => onTypingChange?.(false)}            required
+            onChange={handleChange} onFocus={() => onTypingChange?.(true)}
+            onBlur={() => onTypingChange?.(false)} required
           />
         </div>
 

@@ -24,7 +24,7 @@ export default function RegisterShell() {
         }}
       >
         <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute bottom-0 left-0 h-1/2 w-full bg-gradient-to-t from-background/90 to-transparent" />
+        <div className="absolute bottom-0 left-0 h-1/2 w-full bg-linear-to-t from-background/90 to-transparent" />
 
         <AuthCharacters
           isTyping={isTyping}
@@ -41,7 +41,7 @@ export default function RegisterShell() {
           <span className="text-xl font-bold">OmniCode</span>
         </div>
 
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-100">
           <h1 className="mb-8 text-3xl font-bold text-white text-center">Registrate en OmniCode</h1>
           <RegistrationForm
             onTypingChange={setIsTyping}

@@ -1,6 +1,5 @@
 import { Terminal, Globe, Mail, type LucideIcon } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SocialLink {
   icon: LucideIcon;
@@ -8,7 +7,6 @@ interface SocialLink {
   href: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const SOCIAL_LINKS: SocialLink[] = [
   { icon: Globe, label: "Website", href: "#" },
@@ -16,25 +14,20 @@ const SOCIAL_LINKS: SocialLink[] = [
   { icon: Mail, label: "Email", href: "#" },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FooterSection() {
   return (
     <footer className="flex w-full max-w-7xl flex-col items-center justify-between gap-8 border-t border-white/5 px-6 py-12 md:flex-row">
-      {/* Brand */}
       <div className="flex items-center gap-3 opacity-60">
         <div className="rounded bg-slate-500 p-1 text-background">
           <Terminal className="h-4 w-4" />
         </div>
         <span className="text-lg font-bold tracking-tight">OmniCode</span>
       </div>
-
-      {/* Copyright */}
       <p className="text-sm text-muted-foreground">
         © 2026 OmniCode. Escuela Colombiana de Ingeniería Julio Garavito
       </p>
 
-      {/* Social links */}
       <div className="flex gap-6 opacity-60">
         {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
           <a

@@ -25,7 +25,6 @@ export default function LoginShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-      {/* ── Left panel: animated mascots (desktop only) ── */}
       <div
         className="relative hidden w-1/2 items-center justify-center overflow-hidden border-r border-primary/10 lg:flex"
         style={{
@@ -36,7 +35,7 @@ export default function LoginShell() {
         }}
       >
         <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute bottom-0 left-0 h-1/2 w-full bg-gradient-to-t from-background/90 to-transparent" />
+        <div className="absolute bottom-0 left-0 h-1/2 w-full bg-linear-to-t from-background/90 to-transparent" />
 
         <AuthCharacters
           isTyping={isTyping}
@@ -45,15 +44,14 @@ export default function LoginShell() {
         />
       </div>
 
-      {/* ── Right panel: login form ── */}
+
       <div className="relative flex w-full flex-col items-center justify-center overflow-y-auto p-8 sm:p-12 md:p-24 lg:w-1/2">
-        {/* Mobile-only logo */}
         <div className="absolute left-8 top-8 flex items-center gap-2 lg:hidden">
           <Terminal className="size-7 text-primary" />
           <span className="text-xl font-bold">OmniCode</span>
         </div>
 
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-100">
           <LoginForm
             onTypingChange={setIsTyping}
             onPasswordVisibilityChange={setIsPasswordVisible}

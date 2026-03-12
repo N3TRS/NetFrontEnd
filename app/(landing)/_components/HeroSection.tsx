@@ -21,7 +21,7 @@ export default function HeroSection() {
       {/* Headline */}
       <h1 className="mb-6 max-w-4xl text-5xl font-black leading-tight tracking-tighter md:text-7xl">
         El futuro de la{" "}
-        <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
           Programacion Colaborativa
         </span>
       </h1>
@@ -35,13 +35,13 @@ export default function HeroSection() {
 
       {/* CTAs */}
       <div className="mb-20 flex flex-col gap-4 sm:flex-row">
-        <Button className="glow-orange flex h-14 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-primary px-8 text-lg font-bold text-primary-foreground hover:brightness-110 transition-all border-0">
+        <Button className="glow-orange flex h-14 min-w-45 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-lg font-bold text-primary-foreground hover:brightness-110 transition-all border-0">
           <Play className="h-5 w-5 fill-current" />
           Start Coding
         </Button>
         <Button
           variant="outline"
-          className="flex h-14 min-w-[180px] items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-8 text-lg font-bold backdrop-blur-sm hover:bg-white/10 transition-all"
+          className="flex h-14 min-w-45 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-8 text-lg font-bold backdrop-blur-sm hover:bg-white/10 transition-all"
         >
           Demo
         </Button>

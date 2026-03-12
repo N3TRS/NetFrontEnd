@@ -45,7 +45,7 @@ export default function EditorWindow() {
   return (
     <div className="group relative w-full max-w-5xl">
       {/* Glow border */}
-      <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-primary/30 to-accent/30 opacity-25 blur transition duration-1000 group-hover:opacity-50" />
+      <div className="absolute -inset-1 rounded-2xl bg-linear-to-r from-primary/30 to-accent/30 opacity-25 blur transition duration-1000 group-hover:opacity-50" />
 
       <div className="glow-purple relative overflow-hidden rounded-xl border border-white/10 bg-background/80 shadow-2xl backdrop-blur-xl">
         {/* Toolbar */}
@@ -81,7 +81,7 @@ export default function EditorWindow() {
         </div>
 
         {/* Editor body */}
-        <div className="flex h-[400px]">
+        <div className="flex h-100">
           {/* Line numbers */}
           <div className="w-12 select-none border-r border-white/5 py-4 pr-3 text-right font-mono text-xs text-slate-600">
             {Array.from({ length: 16 }, (_, i) => (
@@ -166,7 +166,7 @@ export default function EditorWindow() {
                 className="absolute flex flex-col"
                 style={{ top: topPx, left: leftPx }}
               >
-                <div className={cn("h-5 w-[2px]", bgClass)} />
+                <div className={cn("h-5 w-0.5", bgClass)} />
                 <div
                   className={cn(
                     "rounded-sm px-1.5 py-0.5 text-[10px] font-bold",

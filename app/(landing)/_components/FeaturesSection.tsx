@@ -1,7 +1,6 @@
 import { Zap, Brain, Leaf, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FeatureCardProps {
   icon: LucideIcon;
@@ -12,7 +11,6 @@ interface FeatureCardProps {
   hoverBorderClass: string;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const FEATURES: FeatureCardProps[] = [
   {
@@ -44,7 +42,6 @@ const FEATURES: FeatureCardProps[] = [
   },
 ];
 
-// ─── Sub-component ────────────────────────────────────────────────────────────
 
 function FeatureCard({
   icon: Icon,
@@ -76,7 +73,7 @@ function FeatureCard({
   );
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
+
 
 export default function FeaturesSection() {
   return (

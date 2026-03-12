@@ -224,7 +224,7 @@ export default function AuthCharacters({
         {/* Orange sphere */}
         <div
           ref={orangeRef}
-          className="absolute bottom-0 flex items-center justify-center rounded-full bg-gradient-to-br from-[#FF8B10] to-orange-700 shadow-[0_0_50px_rgba(255,139,16,0.45)]"
+          className="absolute bottom-0 flex items-center justify-center rounded-full bg-linear-to-br from-noir-orange to-orange-700 shadow-[0_0_50px_rgba(255,139,16,0.45)]"
           style={{
             left: 0,
             width: 170,
@@ -257,7 +257,7 @@ export default function AuthCharacters({
         {/* Purple cube */}
         <div
           ref={purpleRef}
-          className="absolute bottom-0 flex items-start justify-center rounded-2xl bg-gradient-to-tr from-[#5A189A] to-indigo-900 shadow-[0_0_50px_rgba(90,24,154,0.45)]"
+          className="absolute bottom-0 flex items-start justify-center rounded-2xl bg-linear-to-tr from-noir-purple-bright to-indigo-900 shadow-[0_0_50px_rgba(90,24,154,0.45)]"
           style={{
             right: 0,
             width: 150,
@@ -294,16 +294,16 @@ export default function AuthCharacters({
       {/* ── Tagline ── */}
       <div className="mt-4 text-center">
         <h2 className="mb-6 max-w-4xl text-xl font-black leading-tight tracking-tighter md:text-4xl">
-        Construye mejor con
-        <br />
-        <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent md:text-6xl">
-          OmniCode
-        </span>
-      </h2>
+          Construye mejor con
+          <br />
+          <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent md:text-6xl">
+            OmniCode
+          </span>
+        </h2>
 
       </div>
     </div>
 
-    
+
   );
 }
