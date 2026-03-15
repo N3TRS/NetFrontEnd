@@ -17,7 +17,7 @@ const SOCIAL_LINKS: SocialLink[] = [
 
 export default function FooterSection() {
   return (
-    <footer className="flex w-full max-w-7xl flex-col items-center justify-between gap-8 border-t border-white/5 px-6 py-12 md:flex-row">
+    <footer className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-8 border-t border-white/5 px-6 py-12 md:flex-row">
       <div className="flex items-center gap-3 opacity-60">
         <div className="rounded bg-slate-500 p-1 text-background">
           <Terminal className="h-4 w-4" />

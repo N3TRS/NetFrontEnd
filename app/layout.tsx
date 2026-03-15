@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Primary display font — used for all UI text, headings, buttons, inputs
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
@@ -10,7 +9,6 @@ const spaceGrotesk = Space_Grotesk({
   display: "swap",
 });
 
-// Monospace font — used for code blocks and the editor window
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],

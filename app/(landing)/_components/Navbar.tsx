@@ -2,12 +2,6 @@ import Link from "next/link";
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const NAV_LINKS = ["Features", "Docs"] as const;
-type NavLink = (typeof NAV_LINKS)[number];
-
-/**
- * Sticky top navigation bar — server component (no client interactivity needed).
- */
 export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 backdrop-blur-md">
@@ -17,23 +11,11 @@ export default function Navbar() {
           <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
             <Terminal className="h-5 w-5" strokeWidth={2.5} />
           </div>
-          <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-2xl font-bold">OmniCode</span>
+          <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent text-2xl font-bold">
+            OmniCode
+          </span>
         </div>
 
-        {/* Nav links */}
-        <nav className="hidden items-center gap-8 text-sm font-medium opacity-80 md:flex">
-          {NAV_LINKS.map((link: NavLink) => (
-            <a
-              key={link}
-              href="#"
-              className="transition-colors hover:text-primary"
-            >
-              {link}
-            </a>
-          ))}
-        </nav>
-
-        {/* CTAs */}
         <div className="flex items-center gap-4">
           <Button asChild className="glow-purple bg-accent text-accent-foreground font-bold hover:brightness-110 hover:scale-105 transition-all px-5 py-2.5 text-sm rounded-lg border-0">
             <Link href="/login">Log In</Link>
