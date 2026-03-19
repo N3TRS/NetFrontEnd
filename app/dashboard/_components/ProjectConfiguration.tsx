@@ -79,7 +79,6 @@ export default function ProjectConfiguration({
         javaVersion,
         mavenVersion,
         description,
-        createdAt: new Date(),
       };
       onProjectCreated(session);
       setGenerating(false);

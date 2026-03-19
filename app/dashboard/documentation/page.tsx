@@ -1,6 +1,11 @@
+"use client";
 import Image from 'next/image'
 import omnicodeImage from '@/public/OmniCodeDocumentation.png'
+import { useRouter } from 'next/navigation'
+
 export default function Documentation() {
+
+  const router = useRouter();
 
   return (
     <div className="flex flex-col items-center">
@@ -27,12 +32,12 @@ export default function Documentation() {
           </p>
         </div>
 
-        <div className="border border-t-amber-50/10">
+        <div className="border border-t-amber-50/10 rounded-xl">
           <div className="mx-auto flex max-w-7xl items-center justify-between hover:scale-105 transition-transform">
-            <button className="cursor-pointer">
+            <button className="cursor-pointer" onClick={() => router.push('/dashboard')}>
               Pagina Principal
             </button>
-            <button className="cursor-pointer">
+            <button className="cursor-pointer" onClick={() => router.push('/')}>
               Inicio Rápido
             </button>
           </div>
