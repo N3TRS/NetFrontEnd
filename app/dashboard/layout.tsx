@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <NavBar />
-      <main className="grow">{children}</main>
+      <main className="grow pb-10">{children}</main>
       <FooterSection />
     </div>
   )
