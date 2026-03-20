@@ -7,5 +7,4 @@ export interface ProjectSession {
   javaVersion: string;
   mavenVersion: string;
   description: string;
-  createdAt: Date;
 }

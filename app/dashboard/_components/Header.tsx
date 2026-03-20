@@ -23,7 +23,7 @@ export default function NavBar() {
             Sesiones
           </a>
           <a
-            href="#"
+            href="/dashboard/documentation"
             className="transition-colors hover:text-primary"
           >
             Documentacion

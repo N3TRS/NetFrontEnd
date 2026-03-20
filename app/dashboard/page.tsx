@@ -30,7 +30,7 @@ export default function Dashboard() {
           </div>
           {sessions.length > 0 && (
             <a
-              href="#"
+              href="/dashboard/sessions"
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               Ver todas las sesiones
