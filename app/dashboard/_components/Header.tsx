@@ -5,7 +5,7 @@ import GithubIcon from '@/public/github-icon-logo.png'
 export default function NavBar() {
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-primary/10 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-primary/10 backdrop-blur-md">
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
@@ -17,7 +17,7 @@ export default function NavBar() {
         </div>
         <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden items-center gap-8 text-sm font-medium opacity-80 md:flex">
           <a
-            href="#"
+            href="/dashboard/sessions"
             className="transition-colors hover:text-primary"
           >
             Sesiones
@@ -26,7 +26,7 @@ export default function NavBar() {
             href="/dashboard/documentation"
             className="transition-colors hover:text-primary"
           >
-            Documentacion
+            Documentación
           </a>
         </nav>
         <div className="flex items-center gap-4">
