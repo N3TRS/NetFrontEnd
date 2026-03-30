@@ -1,9 +1,9 @@
-import { io, type Socket } from 'socket.io-client';
+import { io, type Socket } from "socket.io-client";
 
 let collabSocket: Socket | null = null;
 
 const getBaseUrl = (): string => {
-  return process.env.NEXT_PUBLIC_COLLAB_SERVER_URL ?? 'http://localhost:3001';
+  return "http://localhost:3002";
 };
 
 export const getCollabSocket = (): Socket => {
@@ -11,7 +11,7 @@ export const getCollabSocket = (): Socket => {
 
   collabSocket = io(`${getBaseUrl()}/collab`, {
     autoConnect: false,
-    transports: ['websocket'],
+    transports: ["websocket"],
   });
 
   return collabSocket;

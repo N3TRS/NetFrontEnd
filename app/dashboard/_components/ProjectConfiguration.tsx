@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { ProjectSession } from "../_types/session";
+import useProject from "../_hooks/useProject";
+import ProjectLoadingModal from "@/components/ui/ProjectLoadingModal";
 
-const MAVEN_VERSIONS = ["4.0.3", "3.5.11"];
+const SPRING_VERSIONS = ["3.5.11", "4.0.3"];
 const JAVA_VERSIONS = ["25", "21", "17"];
 const CONFIG_OPTIONS = ["Properties"];
 
@@ -25,7 +27,7 @@ export default function ProjectConfiguration({
   onClose,
   onProjectCreated,
 }: ProjectConfigurationProps) {
-  const [mavenVersion, setMavenVersion] = useState("4.0.3");
+  const [springVersion, setSpringVersion] = useState("3.5.11");
   const [javaVersion, setJavaVersion] = useState("21");
   const [configuration, setConfiguration] = useState("Properties");
   const [group, setGroup] = useState("com.example");
@@ -34,9 +36,11 @@ export default function ProjectConfiguration({
   const [description, setDescription] = useState("");
   const [packageName, setPackageName] = useState("com.example.demo");
   const [generating, setGenerating] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
   const [packageNameTouched, setPackageNameTouched] = useState(false);
+
+  const { handleProject } = useProject();
 
   const handleArtifactChange = (value: string) => {
     setArtifact(value);
@@ -67,23 +71,38 @@ export default function ProjectConfiguration({
     setPackageName(value);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setGenerating(true);
-    setTimeout(() => {
-      const session: ProjectSession = {
-        id: crypto.randomUUID(),
-        name,
-        artifact,
-        group,
-        packageName,
-        javaVersion,
-        mavenVersion,
-        description,
-      };
+    setError(null);
+
+    const session: ProjectSession = {
+      containerId: crypto.randomUUID(),
+      name,
+      artifact,
+      group,
+      packageName,
+      javaVersion,
+      springVersion,
+      description,
+    };
+
+    const result = await handleProject({ projectConfiguration: session });
+
+    if (result.success) {
+      if (result.data?.project) {
+        sessionStorage.setItem(
+          `project-structure-${session.containerId}`,
+          JSON.stringify(result.data.project),
+        );
+      }
+
       onProjectCreated(session);
-      setGenerating(false);
       onClose();
-    }, 2000);
+    } else {
+      setError(result.error || "Failed to create project. Please try again.");
+    }
+
+    setGenerating(false);
   };
 
   if (!open) return null;
@@ -120,22 +139,23 @@ export default function ProjectConfiguration({
               </div>
               <div>
                 <label className="text-[10px] tracking-widest text-muted-foreground uppercase block mb-3">
-                  Maven Version
+                  Spring Boot Version
                 </label>
                 <div className="flex gap-5">
-                  {MAVEN_VERSIONS.map((v) => (
+                  {SPRING_VERSIONS.map((v) => (
                     <label
                       key={v}
                       className="flex items-center gap-2 cursor-pointer"
                     >
                       <div
-                        onClick={() => setMavenVersion(v)}
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${mavenVersion === v
-                          ? "border-primary"
-                          : "border-white/20"
-                          }`}
+                        onClick={() => setSpringVersion(v)}
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${
+                          springVersion === v
+                            ? "border-primary"
+                            : "border-white/20"
+                        }`}
                       >
-                        {mavenVersion === v && (
+                        {springVersion === v && (
                           <div className="w-2 h-2 rounded-full bg-primary" />
                         )}
                       </div>
@@ -199,10 +219,11 @@ export default function ProjectConfiguration({
                     >
                       <div
                         onClick={() => setConfiguration(opt)}
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${configuration === opt
-                          ? "border-primary"
-                          : "border-white/20"
-                          }`}
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${
+                          configuration === opt
+                            ? "border-primary"
+                            : "border-white/20"
+                        }`}
                       >
                         {configuration === opt && (
                           <div className="w-2 h-2 rounded-full bg-primary" />
@@ -218,9 +239,7 @@ export default function ProjectConfiguration({
 
           <div className="card-noir p-5 flex flex-col gap-5">
             <div className="flex items-center gap-2">
-              <span className="text-primary text-base font-mono">
-                {"{ }"}
-              </span>
+              <span className="text-primary text-base font-mono">{"{ }"}</span>
               <h2 className="text-white text-base font-semibold">
                 Project Metadata
               </h2>
@@ -249,6 +268,12 @@ export default function ProjectConfiguration({
             />
           </div>
 
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
+
           <div className="flex justify-center pt-2">
             <button
               onClick={handleGenerate}
@@ -262,18 +287,25 @@ export default function ProjectConfiguration({
                 className={`w-5 h-5 ${generating ? "animate-spin" : ""}`}
               >
                 {generating ? (
-                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z" opacity=".3" />
+                  <path
+                    d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"
+                    opacity=".3"
+                  />
                 ) : (
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                 )}
               </svg>
-              <span>
-                {generating ? "Generating..." : "Generate Project"}
-              </span>
+              <span>{generating ? "Generating..." : "Generate Project"}</span>
             </button>
           </div>
         </div>
       </div>
+
+      <ProjectLoadingModal
+        open={generating}
+        title="Creating Project"
+        message="Setting up your Spring Boot project with Kubernetes deployment. This may take 30-60 seconds..."
+      />
     </div>
   );
 }

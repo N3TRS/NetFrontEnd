@@ -1,10 +1,10 @@
 export interface ProjectSession {
-  id: string;
+  containerId: string;
   name: string;
   artifact: string;
   group: string;
   packageName: string;
   javaVersion: string;
-  mavenVersion: string;
+  springVersion: string;
   description: string;
 }

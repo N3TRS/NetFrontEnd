@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-
 interface FormState {
   fullName: string;
   email: string;
@@ -28,7 +27,6 @@ export interface RegistrationFormProps {
   onPasswordChange?: (value: string) => void;
 }
 
-
 function IconInput({
   icon: Icon,
   ...props
@@ -43,13 +41,16 @@ function IconInput({
   );
 }
 
-
 export default function RegistrationForm({
   onTypingChange,
   onPasswordVisibilityChange,
   onPasswordChange,
 }: RegistrationFormProps = {}) {
-  const [form, setForm] = useState<FormState>({ fullName: "", email: "", password: "" });
+  const [form, setForm] = useState<FormState>({
+    fullName: "",
+    email: "",
+    password: "",
+  });
   const [errors, setErrors] = useState<FieldError>({});
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -100,7 +101,12 @@ export default function RegistrationForm({
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/github-icon-logo.png" alt="" aria-hidden="true" className="size-5 shrink-0" />
+        <img
+          src="/github-icon-logo.png"
+          alt=""
+          aria-hidden="true"
+          className="size-5 shrink-0"
+        />
         Sign up with GitHub
       </Button>
 
@@ -108,7 +114,7 @@ export default function RegistrationForm({
       <div className="relative flex items-center">
         <span className="flex-1 border-t border-white/10" />
         <span className="px-3 text-xs uppercase tracking-widest text-muted-foreground">
-          O regístrate con email
+          O regístrate con un correo
         </span>
         <span className="flex-1 border-t border-white/10" />
       </div>
@@ -116,14 +122,14 @@ export default function RegistrationForm({
       <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         {/* Full Name */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="fullName">User name</Label>
+          <Label htmlFor="fullName">Nombre de Usuario</Label>
           <IconInput
             icon={User}
             id="fullName"
             name="fullName"
             type="text"
             autoComplete="name"
-            placeholder="User name"
+            placeholder="Nombre de Usuario"
             value={form.fullName}
             onChange={handleChange}
             aria-invalid={!!errors.fullName}
@@ -135,14 +141,14 @@ export default function RegistrationForm({
 
         {/* Email */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Correo Electrónico</Label>
           <IconInput
             icon={AtSign}
             id="email"
             name="email"
             type="email"
             autoComplete="email"
-            placeholder="name@company.com"
+            placeholder="correo@compañia.com"
             value={form.email}
             onChange={handleChange}
             onFocus={() => onTypingChange?.(true)}
@@ -156,7 +162,7 @@ export default function RegistrationForm({
 
         {/* Password */}
         <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">Contraseña</Label>
           <div className="relative">
             <Input
               id="password"
@@ -179,7 +185,11 @@ export default function RegistrationForm({
               aria-label={showPassword ? "Hide password" : "Show password"}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              {showPassword ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
             </button>
           </div>
           {errors.password && (
@@ -197,7 +207,7 @@ export default function RegistrationForm({
             "shadow-[0_4px_20px_rgba(255,139,16,0.3)]",
             "hover:bg-primary/90 hover:shadow-[0_4px_24px_rgba(255,139,16,0.5)]",
             "disabled:opacity-60 transition-all",
-            "flex items-center justify-center gap-2 group"
+            "flex items-center justify-center gap-2 group",
           )}
         >
           {isPending ? (
@@ -211,13 +221,15 @@ export default function RegistrationForm({
         </Button>
 
         <div className="mt-2 flex flex-col items-center gap-2 border-t border-white/10 pt-6">
-          <p className="text-sm text-slate-400">Ya tienes una cuenta?</p>
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            Inicia sesión
-          </Link>
+          <p className="text-center text-sm text-slate-400">
+            Ya tienes una cuenta?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              Inicia sesión
+            </Link>
+          </p>
         </div>
       </form>
     </div>
