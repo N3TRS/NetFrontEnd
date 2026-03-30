@@ -1,16 +1,24 @@
 'use client';
 
 import Editor from '@monaco-editor/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import FileExplorer from './fileExplorer';
 import FileTabs from './fileTabs';
 import RunButton from './runButton';
+import ProjectSyncProgress from '@/components/ui/ProjectSyncProgress';
 import { getLanguage } from '@/lib/languages';
 import { handleBeforeMount } from '@/lib/beforeMount';
 import { useSocket } from '@/hooks/useSocket';
 import { useSession } from '@/hooks/useSession';
 import { useNodes } from '@/hooks/useNodes';
+import { 
+  syncProjectToEditor, 
+  retryFailedFiles,
+  loadProjectStructure, 
+  clearProjectStructure,
+  type SyncProgress 
+} from '@/lib/projectSync';
 
 const createRandomId = (): string => {
   return (globalThis.crypto?.randomUUID?.() ?? `node-${Date.now()}-${Math.random().toString(16).slice(2)}`).replaceAll('-', '');
@@ -43,6 +51,12 @@ const getUserId = (): string => {
   return generated;
 };
 
+const getInitProject = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('initProject') === 'true';
+};
+
 export default function MonacoEditor() {
   const [openFiles, setOpenFiles] = useState<string[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
@@ -50,6 +64,15 @@ export default function MonacoEditor() {
   const [projectName] = useState('mi-proyecto');
   const [sessionId] = useState(() => getSessionId());
   const [userId] = useState(() => getUserId());
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress>({
+    total: 0,
+    synced: 0,
+    currentFile: '',
+    failed: []
+  });
+  const [showRetry, setShowRetry] = useState(false);
 
   const { socket, connected, connectionError } = useSocket();
   const { joined, sessionError } = useSession(socket, sessionId, userId, connected);
@@ -179,6 +202,96 @@ export default function MonacoEditor() {
     setOutput(data.output || data.error || 'Sin salida');
   };
 
+  useEffect(() => {
+    if (!joined || loading) return;
+    
+    const shouldInit = getInitProject();
+    if (!shouldInit) return;
+    
+    if (Object.keys(nodesById).length > 0) {
+      console.log('Session already has nodes, skipping initialization');
+      return;
+    }
+    
+    const structure = loadProjectStructure(sessionId);
+    if (!structure) {
+      console.warn('No project structure found for initialization');
+      return;
+    }
+    
+    setIsSyncing(true);
+    
+    syncProjectToEditor(
+      structure,
+      createNode,
+      (progress) => {
+        setSyncProgress(progress);
+      }
+    )
+      .then((finalProgress) => {
+        console.log('Project synchronized successfully');
+        console.log(`Total: ${finalProgress.total}, Synced: ${finalProgress.synced}, Failed: ${finalProgress.failed.length}`);
+        
+        if (finalProgress.failed.length > 0) {
+          console.warn('Sync completed with errors:', finalProgress.failed);
+          setShowRetry(true);
+        } else {
+          clearProjectStructure(sessionId);
+          setTimeout(() => {
+            setIsSyncing(false);
+          }, 1000);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to sync project:', error);
+        setIsSyncing(false);
+      });
+      
+  }, [joined, loading, sessionId, nodesById, createNode]);
+
+  const handleRetryFailed = async () => {
+    if (syncProgress.failed.length === 0) return;
+    
+    setShowRetry(false);
+    setIsSyncing(true);
+    
+    const structure = loadProjectStructure(sessionId);
+    if (!structure) {
+      console.error('Cannot retry: structure not found');
+      setIsSyncing(false);
+      return;
+    }
+    
+    const retryResult = await retryFailedFiles(
+      syncProgress.failed,
+      structure,
+      createNode,
+      (progress) => {
+        setSyncProgress(prev => ({
+          total: prev.total,
+          synced: prev.synced + progress.synced,
+          currentFile: progress.currentFile,
+          failed: progress.failed
+        }));
+      }
+    );
+    
+    if (retryResult.failed.length === 0) {
+      clearProjectStructure(sessionId);
+      setTimeout(() => {
+        setIsSyncing(false);
+        setShowRetry(false);
+      }, 1000);
+    } else {
+      setSyncProgress(prev => ({
+        ...prev,
+        failed: retryResult.failed
+      }));
+      setShowRetry(true);
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-[var(--color-noir-bg)] bg-grid-white">
       <FileExplorer
@@ -238,6 +351,15 @@ export default function MonacoEditor() {
           {output || <span className="opacity-30 text-primary font-mono text-sm">{'// output'}</span>}
         </div>
       </div>
+
+      <ProjectSyncProgress
+        open={isSyncing || showRetry}
+        totalFiles={syncProgress.total}
+        syncedFiles={syncProgress.synced}
+        currentFile={syncProgress.currentFile}
+        failed={syncProgress.failed.length}
+        onRetry={handleRetryFailed}
+      />
     </div>
   );
 }

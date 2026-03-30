@@ -20,8 +20,9 @@ export default function Dashboard() {
   return (
     <>
       <div
-        className={`section-container mx-auto py-8 flex flex-col gap-8 transition-all duration-300 ${configOpen ? "blur-sm pointer-events-none select-none" : ""
-          }`}
+        className={`section-container mx-auto py-8 flex flex-col gap-8 transition-all duration-300 ${
+          configOpen ? "blur-sm pointer-events-none select-none" : ""
+        }`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -45,7 +46,7 @@ export default function Dashboard() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {recentSessions.map((session) => (
-                <SessionCard key={session.id} session={session} />
+                <SessionCard key={session.containerId} session={session} />
               ))}
             </div>
 

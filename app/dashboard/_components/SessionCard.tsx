@@ -1,17 +1,40 @@
 "use client";
 import { Coffee, Package } from "lucide-react";
 import type { ProjectSession } from "../_types/session";
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
+
 interface SessionCardProps {
   session: ProjectSession;
 }
 
 export default function SessionCard({ session }: SessionCardProps) {
-
   const router = useRouter();
 
+  const handleClick = () => {
+    if (typeof window === 'undefined') return;
+    
+    let userId = localStorage.getItem('collab:userId');
+    if (!userId) {
+      userId = `user-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem('collab:userId', userId);
+    }
+
+    const hasStructure = sessionStorage.getItem(
+      `project-structure-${session.containerId}`
+    ) !== null;
+    
+    const initParam = hasStructure ? '&initProject=true' : '';
+
+    router.push(
+      `/codeEditor?sessionId=${session.containerId}&userId=${userId}${initParam}`
+    );
+  };
+
   return (
-    <div className="group card-noir p-5 flex flex-col gap-4 hover:border-primary/30 transition-all cursor-pointer" onClick={() => router.push("/")}>
+    <div 
+      className="group card-noir p-5 flex flex-col gap-4 hover:border-primary/30 transition-all cursor-pointer" 
+      onClick={handleClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
