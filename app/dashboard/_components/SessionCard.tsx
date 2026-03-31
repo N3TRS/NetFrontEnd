@@ -11,28 +11,12 @@ export default function SessionCard({ session }: SessionCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
-    if (typeof window === 'undefined') return;
-    
-    let userId = localStorage.getItem('collab:userId');
-    if (!userId) {
-      userId = `user-${Math.random().toString(36).slice(2, 10)}`;
-      localStorage.setItem('collab:userId', userId);
-    }
-
-    const hasStructure = sessionStorage.getItem(
-      `project-structure-${session.containerId}`
-    ) !== null;
-    
-    const initParam = hasStructure ? '&initProject=true' : '';
-
-    router.push(
-      `/codeEditor?sessionId=${session.containerId}&userId=${userId}${initParam}`
-    );
+    router.push(`/codeEditor`);
   };
 
   return (
-    <div 
-      className="group card-noir p-5 flex flex-col gap-4 hover:border-primary/30 transition-all cursor-pointer" 
+    <div
+      className="group card-noir p-5 flex flex-col gap-4 hover:border-primary/30 transition-all cursor-pointer"
       onClick={handleClick}
     >
       <div className="flex items-start justify-between">

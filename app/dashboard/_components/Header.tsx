@@ -1,9 +1,8 @@
-import { Terminal } from "lucide-react"
-import Image from "next/image"
-import GithubIcon from '@/public/github-icon-logo.png'
-// TODO: -> Agregar el profile pic de github y opciones de ver perfil 
+import { Terminal } from "lucide-react";
+import Image from "next/image";
+import GithubIcon from "@/public/github-icon-logo.png";
+// TODO: -> Agregar el profile pic de github y opciones de ver perfil
 export default function NavBar() {
-
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 backdrop-blur-md">
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
@@ -22,12 +21,6 @@ export default function NavBar() {
           >
             Sesiones
           </a>
-          <a
-            href="/dashboard/documentation"
-            className="transition-colors hover:text-primary"
-          >
-            Documentación
-          </a>
         </nav>
         <div className="flex items-center gap-4">
           <Image
@@ -38,9 +31,7 @@ export default function NavBar() {
             className="relative inline-block h-10 w-10 rounded-full! cursor-pointer"
           />
         </div>
-
       </div>
     </header>
-  )
-
+  );
 }

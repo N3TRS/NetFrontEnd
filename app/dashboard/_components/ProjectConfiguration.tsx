@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import type { ProjectSession } from "../_types/session";
-import useProject from "../_hooks/useProject";
 import ProjectLoadingModal from "@/components/ui/ProjectLoadingModal";
 
 const SPRING_VERSIONS = ["3.5.11", "4.0.3"];
@@ -39,8 +38,6 @@ export default function ProjectConfiguration({
   const [error, setError] = useState<string | null>(null);
   const [nameTouched, setNameTouched] = useState(false);
   const [packageNameTouched, setPackageNameTouched] = useState(false);
-
-  const { handleProject } = useProject();
 
   const handleArtifactChange = (value: string) => {
     setArtifact(value);
@@ -85,22 +82,6 @@ export default function ProjectConfiguration({
       springVersion,
       description,
     };
-
-    const result = await handleProject({ projectConfiguration: session });
-
-    if (result.success) {
-      if (result.data?.project) {
-        sessionStorage.setItem(
-          `project-structure-${session.containerId}`,
-          JSON.stringify(result.data.project),
-        );
-      }
-
-      onProjectCreated(session);
-      onClose();
-    } else {
-      setError(result.error || "Failed to create project. Please try again.");
-    }
 
     setGenerating(false);
   };

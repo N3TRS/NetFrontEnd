@@ -1,5 +1,7 @@
-import MonacoEditor from "./_components/monaco";
+"use client";
 
-export default function CodeEditor() {
-    return <MonacoEditor />;
+import { MonacoEditor } from "./_components/Editor/MonacoEditor";
+
+export default function CodeEditorPage() {
+  return <MonacoEditor />;
 }

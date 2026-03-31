@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from "react";
 interface HeroProps {
   trustBadge?: {
     text: string;
@@ -54,7 +54,7 @@ void main(){gl_Position=position;}`;
     constructor(canvas: HTMLCanvasElement, scale: number) {
       this.canvas = canvas;
       this.scale = scale;
-      this.gl = canvas.getContext('webgl2')!;
+      this.gl = canvas.getContext("webgl2")!;
       this.gl.viewport(0, 0, canvas.width * scale, canvas.height * scale);
       this.shaderSource = defaultShaderSource;
     }
@@ -84,7 +84,12 @@ void main(){gl_Position=position;}`;
 
     updateScale(scale: number) {
       this.scale = scale;
-      this.gl.viewport(0, 0, this.canvas.width * scale, this.canvas.height * scale);
+      this.gl.viewport(
+        0,
+        0,
+        this.canvas.width * scale,
+        this.canvas.height * scale,
+      );
     }
 
     compile(shader: WebGLShader, source: string) {
@@ -94,7 +99,7 @@ void main(){gl_Position=position;}`;
 
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
         const error = gl.getShaderInfoLog(shader);
-        console.error('Shader compilation error:', error);
+        console.error("Shader compilation error:", error);
       }
     }
 
@@ -114,7 +119,10 @@ void main(){gl_Position=position;}`;
 
     reset() {
       const gl = this.gl;
-      if (this.program && !gl.getProgramParameter(this.program, gl.DELETE_STATUS)) {
+      if (
+        this.program &&
+        !gl.getProgramParameter(this.program, gl.DELETE_STATUS)
+      ) {
         if (this.vs) {
           gl.detachShader(this.program, this.vs);
           gl.deleteShader(this.vs);
@@ -149,18 +157,28 @@ void main(){gl_Position=position;}`;
 
       this.buffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(this.vertices),
+        gl.STATIC_DRAW,
+      );
 
-      const position = gl.getAttribLocation(program, 'position');
+      const position = gl.getAttribLocation(program, "position");
       gl.enableVertexAttribArray(position);
       gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
 
-      (program as any).resolution = gl.getUniformLocation(program, 'resolution');
-      (program as any).time = gl.getUniformLocation(program, 'time');
-      (program as any).move = gl.getUniformLocation(program, 'move');
-      (program as any).touch = gl.getUniformLocation(program, 'touch');
-      (program as any).pointerCount = gl.getUniformLocation(program, 'pointerCount');
-      (program as any).pointers = gl.getUniformLocation(program, 'pointers');
+      (program as any).resolution = gl.getUniformLocation(
+        program,
+        "resolution",
+      );
+      (program as any).time = gl.getUniformLocation(program, "time");
+      (program as any).move = gl.getUniformLocation(program, "move");
+      (program as any).touch = gl.getUniformLocation(program, "touch");
+      (program as any).pointerCount = gl.getUniformLocation(
+        program,
+        "pointerCount",
+      );
+      (program as any).pointers = gl.getUniformLocation(program, "pointers");
     }
 
     render(now = 0) {
@@ -174,7 +192,11 @@ void main(){gl_Position=position;}`;
       gl.useProgram(program);
       gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 
-      gl.uniform2f((program as any).resolution, this.canvas.width, this.canvas.height);
+      gl.uniform2f(
+        (program as any).resolution,
+        this.canvas.width,
+        this.canvas.height,
+      );
       gl.uniform1f((program as any).time, now * 1e-3);
       gl.uniform2f((program as any).move, ...this.mouseMove);
       gl.uniform2f((program as any).touch, ...this.mouseCoords);
@@ -195,15 +217,22 @@ void main(){gl_Position=position;}`;
     constructor(element: HTMLCanvasElement, scale: number) {
       this.scale = scale;
 
-      const map = (element: HTMLCanvasElement, scale: number, x: number, y: number): [number, number] =>
-        [x * scale, element.height - y * scale];
+      const map = (
+        element: HTMLCanvasElement,
+        scale: number,
+        x: number,
+        y: number,
+      ): [number, number] => [x * scale, element.height - y * scale];
 
-      element.addEventListener('pointerdown', (e) => {
+      element.addEventListener("pointerdown", (e) => {
         this.active = true;
-        this.pointers.set(e.pointerId, map(element, this.getScale(), e.clientX, e.clientY));
+        this.pointers.set(
+          e.pointerId,
+          map(element, this.getScale(), e.clientX, e.clientY),
+        );
       });
 
-      element.addEventListener('pointerup', (e) => {
+      element.addEventListener("pointerup", (e) => {
         if (this.count === 1) {
           this.lastCoords = this.first;
         }
@@ -211,7 +240,7 @@ void main(){gl_Position=position;}`;
         this.active = this.pointers.size > 0;
       });
 
-      element.addEventListener('pointerleave', (e) => {
+      element.addEventListener("pointerleave", (e) => {
         if (this.count === 1) {
           this.lastCoords = this.first;
         }
@@ -219,10 +248,13 @@ void main(){gl_Position=position;}`;
         this.active = this.pointers.size > 0;
       });
 
-      element.addEventListener('pointermove', (e) => {
+      element.addEventListener("pointermove", (e) => {
         if (!this.active) return;
         this.lastCoords = [e.clientX, e.clientY];
-        this.pointers.set(e.pointerId, map(element, this.getScale(), e.clientX, e.clientY));
+        this.pointers.set(
+          e.pointerId,
+          map(element, this.getScale(), e.clientX, e.clientY),
+        );
         this.moves = [this.moves[0] + e.movementX, this.moves[1] + e.movementY];
       });
     }
@@ -305,7 +337,7 @@ void main(){gl_Position=position;}`;
 
     loop(0);
 
-    window.addEventListener('resize', resize);
+    window.addEventListener("resize", resize);
 
     const observer = new ResizeObserver(resize);
     if (canvas.parentElement) {
@@ -313,7 +345,7 @@ void main(){gl_Position=position;}`;
     }
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener("resize", resize);
       observer.disconnect();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -333,12 +365,14 @@ const Hero: React.FC<HeroProps> = ({
   headline,
   subtitle,
   buttons,
-  className = ""
+  className = "",
 }) => {
   const canvasRef = useShaderBackground();
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden bg-black ${className}`}>
+    <div
+      className={`relative w-full h-screen overflow-hidden bg-black ${className}`}
+    >
       <style jsx>{`
         @keyframes fade-in-down {
           from {
@@ -350,7 +384,7 @@ const Hero: React.FC<HeroProps> = ({
             transform: translateY(0);
           }
         }
-        
+
         @keyframes fade-in-up {
           from {
             opacity: 0;
@@ -361,38 +395,44 @@ const Hero: React.FC<HeroProps> = ({
             transform: translateY(0);
           }
         }
-        
+
         .animate-fade-in-down {
           animation: fade-in-down 0.8s ease-out forwards;
         }
-        
+
         .animate-fade-in-up {
           animation: fade-in-up 0.8s ease-out forwards;
           opacity: 0;
         }
-        
+
         .animation-delay-200 {
           animation-delay: 0.2s;
         }
-        
+
         .animation-delay-400 {
           animation-delay: 0.4s;
         }
-        
+
         .animation-delay-600 {
           animation-delay: 0.6s;
         }
-        
+
         .animation-delay-800 {
           animation-delay: 0.8s;
         }
-        
+
         @keyframes gradient-shift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
         }
-        
+
         .animate-gradient {
           background-size: 200% 200%;
           animation: gradient-shift 3s ease infinite;
@@ -402,7 +442,7 @@ const Hero: React.FC<HeroProps> = ({
       <canvas
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-contain touch-none"
-        style={{ background: 'black' }}
+        style={{ background: "black" }}
       />
 
       {/* Hero Content Overlay */}
@@ -414,7 +454,10 @@ const Hero: React.FC<HeroProps> = ({
               {trustBadge.icons && (
                 <div className="flex">
                   {trustBadge.icons.map((icon, index) => (
-                    <span key={index} className={`text-${index === 0 ? 'yellow' : index === 1 ? 'orange' : 'amber'}-300`}>
+                    <span
+                      key={index}
+                      className={`text-${index === 0 ? "yellow" : index === 1 ? "orange" : "amber"}-300`}
+                    >
                       {icon}
                     </span>
                   ))}
