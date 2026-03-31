@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { githubLoginHook } from "../../login/_hooks/githubLoginHook";
+import { signUpHook } from "../_hooks/signUpHook";
 
 interface FormState {
   fullName: string;
@@ -46,18 +48,17 @@ export default function RegistrationForm({
   onPasswordVisibilityChange,
   onPasswordChange,
 }: RegistrationFormProps = {}) {
-  const [form, setForm] = useState<FormState>({
-    fullName: "",
-    email: "",
-    password: "",
-  });
   const [errors, setErrors] = useState<FieldError>({});
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { handleGithubLogin } = githubLoginHook();
+  const { name, email, password, setName, setEmail, setPassword, handleSignUp } = signUpHook();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "fullName") setName(value);
+    if (name === "email") setEmail(value);
+    if (name === "password") setPassword(value);
     if (errors[name as keyof FieldError]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -66,28 +67,19 @@ export default function RegistrationForm({
 
   const validate = (): boolean => {
     const next: FieldError = {};
-    if (!form.fullName.trim()) next.fullName = "El nombre es requerido.";
-    if (!form.email.trim()) {
+    if (!name.trim()) next.fullName = "El nombre es requerido.";
+    if (!email.trim()) {
       next.email = "El email es requerido.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       next.email = "Ingrese una dirección de email válida.";
     }
-    if (!form.password) {
+    if (!password) {
       next.password = "La contraseña es requerida.";
-    } else if (form.password.length < 8) {
+    } else if (password.length < 8) {
       next.password = "Mínimo 8 caracteres.";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setIsPending(true);
-    // TODO: connect to registration API
-    await new Promise((r) => setTimeout(r, 800));
-    setIsPending(false);
   };
 
   return (
@@ -96,11 +88,8 @@ export default function RegistrationForm({
         type="button"
         variant="outline"
         className="h-12 w-full gap-3 rounded-xl border-primary/20 text-sm font-medium hover:bg-primary/5"
-        onClick={() => {
-          // TODO: trigger GitHub OAuth flow
-        }}
+        onClick={handleGithubLogin}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/github-icon-logo.png"
           alt=""
@@ -110,7 +99,6 @@ export default function RegistrationForm({
         Sign up with GitHub
       </Button>
 
-      {/* Divider */}
       <div className="relative flex items-center">
         <span className="flex-1 border-t border-white/10" />
         <span className="px-3 text-xs uppercase tracking-widest text-muted-foreground">
@@ -119,8 +107,7 @@ export default function RegistrationForm({
         <span className="flex-1 border-t border-white/10" />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-        {/* Full Name */}
+      <form onSubmit={handleSignUp} className="flex flex-col gap-5" noValidate>
         <div className="flex flex-col gap-2">
           <Label htmlFor="fullName">Nombre de Usuario</Label>
           <IconInput
@@ -130,7 +117,7 @@ export default function RegistrationForm({
             type="text"
             autoComplete="name"
             placeholder="Nombre de Usuario"
-            value={form.fullName}
+            value={name}
             onChange={handleChange}
             aria-invalid={!!errors.fullName}
           />
@@ -139,7 +126,6 @@ export default function RegistrationForm({
           )}
         </div>
 
-        {/* Email */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Correo Electrónico</Label>
           <IconInput
@@ -149,7 +135,7 @@ export default function RegistrationForm({
             type="email"
             autoComplete="email"
             placeholder="correo@compañia.com"
-            value={form.email}
+            value={email}
             onChange={handleChange}
             onFocus={() => onTypingChange?.(true)}
             onBlur={() => onTypingChange?.(false)}
@@ -160,7 +146,6 @@ export default function RegistrationForm({
           )}
         </div>
 
-        {/* Password */}
         <div className="flex flex-col gap-2">
           <Label htmlFor="password">Contraseña</Label>
           <div className="relative">
@@ -170,7 +155,7 @@ export default function RegistrationForm({
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               placeholder="••••••••"
-              value={form.password}
+              value={password}
               onChange={handleChange}
               aria-invalid={!!errors.password}
               className="pr-10"
@@ -196,8 +181,6 @@ export default function RegistrationForm({
             <p className="text-xs text-destructive">{errors.password}</p>
           )}
         </div>
-
-        {/* CTA */}
         <Button
           type="submit"
           disabled={isPending}

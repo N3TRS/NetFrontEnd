@@ -4,12 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
+import { loginHook } from "../_hooks/loginHook";
+import { githubLoginHook } from "../_hooks/githubLoginHook";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface FormState {
   email: string;
@@ -17,19 +18,13 @@ interface FormState {
 }
 
 export interface LoginFormProps {
-  /** Called when the email input gains/loses focus (drives character reaction). */
   onTypingChange?: (isTyping: boolean) => void;
-  /** Called whenever password visibility is toggled. */
   onPasswordVisibilityChange?: (visible: boolean) => void;
-  /** Called on every password keystroke with the current value. */
   onPasswordChange?: (value: string) => void;
 }
 
-// ─── Reusable sub-components ──────────────────────────────────────────────────
-
 function GitHubIcon({ className }: { className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/github-icon-logo.png"
       alt=""
@@ -39,28 +34,22 @@ function GitHubIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
-/**
- * LoginForm — Client Component.
- *
- * Handles all form state, validation feedback, and submission for the
- * OmniCode sign-in page. Composed exclusively from shadcn/ui primitives
- * and lucide-react icons.
- */
 export default function LoginForm({
   onTypingChange,
   onPasswordVisibilityChange,
   onPasswordChange,
 }: LoginFormProps) {
-  const [form, setForm] = useState<FormState>({ email: "", password: "" });
+  const { email, password, setEmail, setPassword, handleLogin, isPending } = loginHook();
+  const { handleGithubLogin } = githubLoginHook();
   const [showPassword, setShowPassword] = useState(false);
-  const [isPending, setIsPending] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "password") onPasswordChange?.(value);
+    if (name === "email") setEmail(value);
+    if (name === "password") {
+      setPassword(value);
+      onPasswordChange?.(value);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -69,17 +58,8 @@ export default function LoginForm({
     onPasswordVisibilityChange?.(next);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsPending(true);
-    // TODO: replace with real auth call (e.g. NextAuth signIn)
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsPending(false);
-  };
-
   return (
     <div className="flex w-full flex-col gap-8">
-      {/* ── Header ── */}
       <div className="flex flex-col gap-1.5">
         <h1 className="text-3xl font-bold tracking-tight">
           Bienvenido de nuevo!
@@ -89,20 +69,16 @@ export default function LoginForm({
         </p>
       </div>
 
-      {/* ── GitHub OAuth button ── */}
       <Button
         type="button"
         variant="outline"
         className="h-12 w-full gap-3 rounded-xl border-primary/20 text-sm font-medium hover:bg-primary/5"
-        onClick={() => {
-          // TODO: trigger GitHub OAuth flow
-        }}
+        onClick={handleGithubLogin}
       >
         <GitHubIcon />
         Iniciar con GitHub
       </Button>
 
-      {/* ── Divider ── */}
       <div className="relative flex items-center">
         <span className="flex-1 border-t border-white/10" />
         <span className="px-3 text-xs uppercase tracking-widest text-muted-foreground">
@@ -111,7 +87,7 @@ export default function LoginForm({
         <span className="flex-1 border-t border-white/10" />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+      <form onSubmit={handleLogin} className="flex flex-col gap-5" noValidate>
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Correo</Label>
           <Input
@@ -120,7 +96,7 @@ export default function LoginForm({
             type="email"
             autoComplete="email"
             placeholder="name@company.com"
-            value={form.email}
+            value={email}
             onChange={handleChange}
             onFocus={() => onTypingChange?.(true)}
             onBlur={() => onTypingChange?.(false)}
@@ -146,7 +122,7 @@ export default function LoginForm({
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="••••••••"
-              value={form.password}
+              value={password}
               onChange={handleChange}
               onFocus={() => onTypingChange?.(true)}
               onBlur={() => onTypingChange?.(false)}

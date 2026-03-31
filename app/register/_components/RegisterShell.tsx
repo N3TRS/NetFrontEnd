@@ -13,7 +13,6 @@ export default function RegisterShell() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-      {/* ── Left panel: animated mascots (desktop only) ── */}
       <div
         className="relative hidden w-1/2 items-center justify-center overflow-hidden border-r border-primary/10 lg:flex"
         style={{
@@ -32,10 +31,7 @@ export default function RegisterShell() {
           hasPassword={hasPassword}
         />
       </div>
-
-      {/* ── Right panel: registration form ── */}
       <div className="relative flex w-full flex-col items-center justify-center overflow-y-auto p-8 sm:p-12 md:p-24 lg:w-1/2">
-        {/* Mobile-only logo */}
         <div className="absolute left-8 top-8 flex items-center gap-2 lg:hidden">
           <Terminal className="size-7 text-primary" />
           <span className="text-xl font-bold">OmniCode</span>
