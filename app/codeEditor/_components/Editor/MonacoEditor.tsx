@@ -1,24 +1,26 @@
 "use client";
 
 import Editor, { type OnMount } from "@monaco-editor/react";
-import { useCallback, useRef } from "react";
-import type { editor } from "monaco-editor";
+import { useCallback, useState } from "react";
+import type { editor as MonacoEditorNS } from "monaco-editor";
+import type * as MonacoType from "monaco-editor";
+import { useEditorStore } from "../../_stores/editorStore";
+import { useMonacoBinding } from "../../_hooks/useMonacoBinding";
 
-interface MonacoEditorProps {
-  language?: string;
-  value?: string;
-  onChange?: (value: string | undefined) => void;
-}
+export function MonacoEditor() {
+  const { activeFile } = useEditorStore();
 
-export function MonacoEditor({
-  language = "java",
-  value = "",
-  onChange,
-}: MonacoEditorProps) {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const [editorInstance, setEditorInstance] =
+    useState<MonacoEditorNS.IStandaloneCodeEditor | null>(null);
+  const [monacoInstance, setMonacoInstance] = useState<
+    typeof MonacoType | null
+  >(null);
 
-  const handleEditorDidMount: OnMount = useCallback((editor) => {
-    editorRef.current = editor;
+  useMonacoBinding(editorInstance, monacoInstance, activeFile);
+
+  const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
+    setEditorInstance(editor);
+    setMonacoInstance(monaco);
     editor.focus();
   }, []);
 
@@ -26,11 +28,9 @@ export function MonacoEditor({
     <div className="h-full w-full">
       <Editor
         height="100%"
-        language={language}
-        value={value}
-        onChange={onChange}
         onMount={handleEditorDidMount}
         theme="vs-dark"
+        language="java"
         options={{
           fontSize: 14,
           fontFamily: "var(--font-jetbrains-mono), monospace",

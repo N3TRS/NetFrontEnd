@@ -1,120 +1,71 @@
 "use client";
 
-import { ChevronRight, File, Folder } from "lucide-react";
+import { Tree, type NodeRendererProps } from "react-arborist";
+import { File, Folder, FolderOpen, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useEditorStore } from "../../../_stores/editorStore";
+import { useFileTree } from "../../../_hooks/useFileTree";
+import { useYjsSetup } from "../../../_hooks/useYjsSetup";
+import type { FileNode } from "../../../_lib/fileSystem/index";
 
-const MOCK_FILES = [
-  {
-    id: "1",
-    name: "src",
-    isFolder: true,
-    children: [
-      {
-        id: "1-1",
-        name: "main",
-        isFolder: true,
-        children: [
-          {
-            id: "1-1-1",
-            name: "java",
-            isFolder: true,
-            children: [
-              {
-                id: "1-1-1-1",
-                name: "com",
-                isFolder: true,
-                children: [
-                  {
-                    id: "1-1-1-1-1",
-                    name: "omnicode",
-                    isFolder: true,
-                    children: [
-                      { id: "f1", name: "Application.java", isFolder: false },
-                      { id: "f2", name: "Controller.java", isFolder: false },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: "1-1-2",
-            name: "resources",
-            isFolder: true,
-            children: [
-              { id: "f3", name: "application.properties", isFolder: false },
-            ],
-          },
-        ],
-      },
-      {
-        id: "1-2",
-        name: "test",
-        isFolder: true,
-        children: [],
-      },
-    ],
-  },
-  { id: "f4", name: "pom.xml", isFolder: false },
-  { id: "f5", name: "README.md", isFolder: false },
-];
-
-interface FileNode {
-  id: string;
-  name: string;
-  isFolder: boolean;
-  children?: FileNode[];
-}
-
-interface FileTreeItemProps {
-  node: FileNode;
-  level: number;
-}
-
-function FileTreeItem({ node, level }: FileTreeItemProps) {
-  const [isOpen, setIsOpen] = React.useState(level < 2);
-
-  const handleClick = () => {
-    if (node.isFolder) {
-      setIsOpen(!isOpen);
-    } else {
-      // TODO: Open file in editor
-      console.log("Open file:", node.name);
-    }
-  };
+function NodeRenderer({ node, style, dragHandle }: NodeRendererProps<FileNode>) {
+  const isFolder = !!node.children;
 
   return (
-    <div>
-      <button
-        onClick={handleClick}
-        className="flex w-full items-center gap-1 rounded px-2 py-1 text-sm hover:bg-white/10"
-        style={{ paddingLeft: `${level * 12 + 8}px` }}
-      >
-        {node.isFolder && (
-          <ChevronRight
-            className={`h-4 w-4 transition-transform ${isOpen ? "rotate-90" : ""}`}
-          />
-        )}
-        {node.isFolder ? (
-          <Folder className="h-4 w-4 text-primary" />
+    <div
+      ref={dragHandle}
+      style={style}
+      className={cn(
+        "flex cursor-pointer select-none items-center gap-1.5 rounded px-2 py-0.5 text-sm",
+        "hover:bg-white/10",
+        node.isSelected ? "bg-white/10 text-foreground" : "text-muted-foreground",
+      )}
+    >
+      {isFolder ? (
+        <ChevronRight
+          className={cn(
+            "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+            node.isOpen && "rotate-90",
+          )}
+        />
+      ) : (
+        <span className="w-3.5 shrink-0" />
+      )}
+
+      {isFolder ? (
+        node.isOpen ? (
+          <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
         ) : (
-          <File className="h-4 w-4 text-muted-foreground" />
-        )}
-        <span className="truncate">{node.name}</span>
-      </button>
-      {node.isFolder && isOpen && node.children && (
-        <div>
-          {node.children.map((child) => (
-            <FileTreeItem key={child.id} node={child} level={level + 1} />
-          ))}
-        </div>
+          <Folder className="h-4 w-4 shrink-0 text-primary" />
+        )
+      ) : (
+        <File className="h-4 w-4 shrink-0 text-muted-foreground/70" />
+      )}
+
+      {node.isEditing ? (
+        <input
+          autoFocus
+          defaultValue={node.data.name}
+          onBlur={(e) => node.submit(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") node.submit(e.currentTarget.value);
+            if (e.key === "Escape") node.reset();
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-full rounded bg-background px-1 text-sm text-foreground outline outline-1 outline-primary"
+        />
+      ) : (
+        <span className="truncate">{node.data.name}</span>
       )}
     </div>
   );
 }
 
-import React from "react";
-
 export function FileExplorer() {
+  const { isSynced } = useYjsSetup();
+  const { treeData, onCreate, onMove, onRename, onDelete } = useFileTree(isSynced);
+  const { openFile } = useEditorStore();
+
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/10 px-4 py-2">
@@ -122,10 +73,32 @@ export function FileExplorer() {
           Explorer
         </h2>
       </div>
-      <div className="flex-1 overflow-auto py-2">
-        {MOCK_FILES.map((node) => (
-          <FileTreeItem key={node.id} node={node} level={0} />
-        ))}
+
+      <div className="flex-1 overflow-auto py-1">
+        {isSynced ? (
+          <Tree<FileNode>
+            data={treeData}
+            onCreate={onCreate}
+            onMove={onMove}
+            onRename={onRename}
+            onDelete={onDelete}
+            onActivate={(node) => {
+              if (!node.children) {
+                openFile(node.id);
+              }
+            }}
+            openByDefault={false}
+            indent={16}
+            rowHeight={28}
+            width="100%"
+          >
+            {NodeRenderer}
+          </Tree>
+        ) : (
+          <div className="px-4 py-3 text-xs text-muted-foreground">
+            Cargando...
+          </div>
+        )}
       </div>
     </div>
   );
