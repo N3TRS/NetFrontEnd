@@ -20,7 +20,7 @@ export function loginHook() {
         }
 
         try {
-            const response = await fetch("http://localhost:3000/auth/signin", {
+            const response = await fetch("http://localhost:3002/auth/signin", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
