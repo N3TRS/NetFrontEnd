@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function Navbar() {
+export default function NavBar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 backdrop-blur-md">
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
