@@ -2,7 +2,7 @@
 
 import { Files, Search, GitBranch, Bot, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEditorStore, type PanelType } from "../../_stores/editorStore";
+import { useEditorStore, type PanelType, type LeftPanelType } from "../../_stores/editorStore";
 
 interface ActivityItem {
   id: PanelType;
@@ -18,11 +18,18 @@ const ACTIVITIES: ActivityItem[] = [
 ];
 
 export function ActivityBar() {
-  const { activePanel, setActivePanel } = useEditorStore();
+  const { activePanel, isAIDrawerOpen, setActivePanel, toggleAIDrawer } = useEditorStore();
 
   const handleClick = (id: PanelType) => {
-    setActivePanel(activePanel === id ? null : id);
+    if (id === "ai") {
+      toggleAIDrawer();
+    } else {
+      setActivePanel(activePanel === id ? null : (id as LeftPanelType));
+    }
   };
+
+  const isActive = (id: PanelType) =>
+    id === "ai" ? isAIDrawerOpen : activePanel === id;
 
   return (
     <aside className="flex w-12 flex-col items-center gap-1 border-r border-white/10 bg-background/50 py-2">
@@ -31,11 +38,11 @@ export function ActivityBar() {
           key={id}
           onClick={() => handleClick(id)}
           aria-label={label}
-          aria-pressed={activePanel === id}
+          aria-pressed={isActive(id)}
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
             "hover:bg-white/10",
-            activePanel === id
+            isActive(id)
               ? "border-l-2 border-primary bg-white/5 text-primary"
               : "text-muted-foreground",
           )}

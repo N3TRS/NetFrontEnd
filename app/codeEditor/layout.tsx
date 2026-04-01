@@ -1,49 +1,63 @@
 "use client";
 
-import { Panel, Group, Separator } from "react-resizable-panels";
 import { Header } from "./_components/Header/Header";
 import { ActivityBar } from "./_components/ActivityBar/ActivityBar";
 import { PanelContainer } from "./_components/Panels/PanelContainer";
 import { AIDrawer } from "./_components/AIDrawer/AIDrawer";
+import { TerminalPanel } from "./_components/Panels/TerminalPanel/TerminalPanel";
 import { useEditorStore } from "./_stores/editorStore";
+
+const LEFT_PANEL_WIDTH = 260;
+const AI_PANEL_WIDTH = 360;
+const TERMINAL_HEIGHT = 220;
 
 export default function CodeEditorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { activePanel, isAIDrawerOpen } = useEditorStore();
-  const showLeftPanel = activePanel && activePanel !== "ai";
-  const layoutKey = `${showLeftPanel ? "L" : ""}-${isAIDrawerOpen ? "R" : ""}`;
+  const { activePanel, isAIDrawerOpen, isTerminalOpen } = useEditorStore();
+  const showLeftPanel = activePanel !== null;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />
-        <Group key={layoutKey} orientation="horizontal" className="flex-1">
-          {showLeftPanel && (
-            <>
-              <Panel id="left-panel" defaultSize={20} minSize={10} maxSize={80}>
-                <PanelContainer />
-              </Panel>
-              <Separator className="relative w-1.5 cursor-col-resize bg-border/50 transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary before:absolute before:inset-y-0 before:-left-2 before:-right-2 before:content-['']" />
-            </>
-          )}
 
-          <Panel id="editor-panel" minSize={15}>
-            <main className="h-full">{children}</main>
-          </Panel>
+        <div
+          style={{ width: showLeftPanel ? LEFT_PANEL_WIDTH : 0 }}
+          className="shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
+        >
+          <div
+            style={{ width: LEFT_PANEL_WIDTH }}
+            className="h-full border-r border-white/10"
+          >
+            <PanelContainer />
+          </div>
+        </div>
 
-          {isAIDrawerOpen && (
-            <>
-              <Separator className="relative w-1.5 cursor-col-resize bg-border/50 transition-colors hover:bg-primary/50 data-[resize-handle-active]:bg-primary before:absolute before:inset-y-0 before:-left-2 before:-right-2 before:content-['']" />
-              <Panel id="ai-panel" defaultSize={25} minSize={15} maxSize={80}>
-                <AIDrawer />
-              </Panel>
-            </>
-          )}
-        </Group>
+        <main className="min-w-0 flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-hidden">{children}</div>
+
+          <div
+            style={{ height: isTerminalOpen ? TERMINAL_HEIGHT : 0 }}
+            className="shrink-0 overflow-hidden transition-[height] duration-200 ease-in-out border-t border-white/10"
+          >
+            <div style={{ height: TERMINAL_HEIGHT }} className="h-full">
+              <TerminalPanel />
+            </div>
+          </div>
+        </main>
+
+        <div
+          style={{ width: isAIDrawerOpen ? AI_PANEL_WIDTH : 0 }}
+          className="shrink-0 overflow-hidden transition-[width] duration-200 ease-in-out"
+        >
+          <div style={{ width: AI_PANEL_WIDTH }} className="h-full">
+            <AIDrawer />
+          </div>
+        </div>
       </div>
     </div>
   );
