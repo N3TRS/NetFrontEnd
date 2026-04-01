@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_SESSION_API_URL || "http://localhost:3001/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_SESSION_API_URL || "http://localhost:3002/api";
 
 /**
  * Session data returned from API
@@ -52,9 +53,14 @@ interface UseSessionApiResult {
   error: string | null;
 
   // Actions
-  createSession: (name: string, maxParticipants?: number) => Promise<Session | null>;
+  createSession: (
+    name: string,
+    maxParticipants?: number,
+  ) => Promise<Session | null>;
   joinSession: (sessionId: string) => Promise<JoinSessionResponse | null>;
-  joinSessionByCode: (inviteCode: string) => Promise<JoinSessionResponse | null>;
+  joinSessionByCode: (
+    inviteCode: string,
+  ) => Promise<JoinSessionResponse | null>;
   getSession: (sessionId: string) => Promise<SessionDetails | null>;
   getMySessions: () => Promise<SessionSummary[]>;
   leaveSession: (sessionId: string) => Promise<boolean>;
@@ -74,7 +80,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
   const apiRequest = useCallback(
     async <T>(
       endpoint: string,
-      options: RequestInit = {}
+      options: RequestInit = {},
     ): Promise<T | null> => {
       if (!token) {
         setError("Authentication required");
@@ -96,7 +102,9 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || `Request failed: ${response.status}`);
+          throw new Error(
+            errorData.message || `Request failed: ${response.status}`,
+          );
         }
 
         // Handle 204 No Content
@@ -106,7 +114,8 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
 
         return await response.json();
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Request failed";
+        const errorMessage =
+          err instanceof Error ? err.message : "Request failed";
         setError(errorMessage);
         console.error(`[SessionAPI] Error: ${errorMessage}`);
         return null;
@@ -114,7 +123,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
         setLoading(false);
       }
     },
-    [token]
+    [token],
   );
 
   /**
@@ -127,7 +136,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
         body: JSON.stringify({ name, maxParticipants }),
       });
     },
-    [apiRequest]
+    [apiRequest],
   );
 
   /**
@@ -139,7 +148,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
         method: "POST",
       });
     },
-    [apiRequest]
+    [apiRequest],
   );
 
   /**
@@ -152,7 +161,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
         body: JSON.stringify({ inviteCode }),
       });
     },
-    [apiRequest]
+    [apiRequest],
   );
 
   /**
@@ -162,7 +171,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
     async (sessionId: string): Promise<SessionDetails | null> => {
       return apiRequest<SessionDetails>(`/sessions/${sessionId}`);
     },
-    [apiRequest]
+    [apiRequest],
   );
 
   /**
@@ -173,9 +182,6 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
     return result || [];
   }, [apiRequest]);
 
-  /**
-   * Leave a session
-   */
   const leaveSession = useCallback(
     async (sessionId: string): Promise<boolean> => {
       await apiRequest(`/sessions/${sessionId}/leave`, {
@@ -183,12 +189,9 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
       });
       return !error;
     },
-    [apiRequest, error]
+    [apiRequest, error],
   );
 
-  /**
-   * Close a session (owner only)
-   */
   const closeSession = useCallback(
     async (sessionId: string): Promise<boolean> => {
       await apiRequest(`/sessions/${sessionId}`, {
@@ -196,7 +199,7 @@ export function useSessionApi(token: string | null): UseSessionApiResult {
       });
       return !error;
     },
-    [apiRequest, error]
+    [apiRequest, error],
   );
 
   return {

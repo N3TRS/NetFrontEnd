@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getPersistence, initProviders, cleanupProviders, isInitialized } from "../_lib/yjs/ydoc";
+import {
+  getProvider,
+  getPersistence,
+  initProviders,
+  cleanupProviders,
+} from "../_lib/yjs/ydoc";
 
 interface UseYjsSetupOptions {
   sessionId?: string;
@@ -16,10 +21,6 @@ interface UseYjsSetupResult {
   reconnect: () => Promise<void>;
 }
 
-/**
- * Hook for setting up Yjs providers
- * Supports both default P2P mode and server-backed sessions
- */
 export function useYjsSetup(options?: UseYjsSetupOptions): UseYjsSetupResult {
   const [isSynced, setIsSynced] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -31,25 +32,30 @@ export function useYjsSetup(options?: UseYjsSetupOptions): UseYjsSetupResult {
     try {
       setError(null);
 
-      // Build signaling servers array if server URL is provided
-      const signalingServers = serverUrl
-        ? [`${serverUrl.replace(/^http/, "ws")}/signaling${token ? `?token=${token}` : ""}`]
-        : undefined;
+      await initProviders(sessionId, { token, serverUrl });
 
-      // Initialize providers
-      await initProviders(sessionId, { signalingServers, token });
-
-      setIsConnected(true);
-
-      // Wait for local persistence to sync
-      const persistence = getPersistence();
-      if (persistence) {
-        await persistence.whenSynced;
+      const provider = getProvider();
+      if (provider) {
+        if (provider.synced) {
+          setIsConnected(true);
+          setIsSynced(true);
+        } else {
+          if (provider.connected) setIsConnected(true);
+          provider.on("onConnected", () => setIsConnected(true));
+          provider.on("onSynced", () => setIsSynced(true));
+          provider.on("onError", (e) => setError(e.message));
+        }
+      } else {
+        setIsConnected(true);
+        const persistence = getPersistence();
+        if (persistence) {
+          await persistence.whenSynced;
+        }
+        setIsSynced(true);
       }
-
-      setIsSynced(true);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to initialize Yjs";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to initialize Yjs";
       setError(errorMessage);
       console.error("[useYjsSetup] Error:", errorMessage);
     }
@@ -66,7 +72,6 @@ export function useYjsSetup(options?: UseYjsSetupOptions): UseYjsSetupResult {
     initializeProviders();
 
     return () => {
-      // Cleanup on unmount if session-specific
       if (sessionId) {
         cleanupProviders();
       }
