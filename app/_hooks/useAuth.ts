@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-/**
- * User data stored in localStorage
- */
 export interface AuthUser {
   email: string;
   token: string;
@@ -20,14 +17,13 @@ interface UseAuthResult {
   refreshAuth: () => void;
 }
 
-/**
- * Decode JWT payload without verification (client-side only)
- */
-function decodeJwtPayload(token: string): { email?: string; role?: string } | null {
+function decodeJwtPayload(
+  token: string,
+): { email?: string; role?: string } | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    
+
     const payload = parts[1];
     const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
     return JSON.parse(decoded);
@@ -36,10 +32,6 @@ function decodeJwtPayload(token: string): { email?: string; role?: string } | nu
   }
 }
 
-/**
- * Hook for accessing authentication state from localStorage
- * Works with both GitHub OAuth and email/password login flows
- */
 export function useAuth(): UseAuthResult {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,11 +51,8 @@ export function useAuth(): UseAuthResult {
       }
 
       const parsed = JSON.parse(stored);
-      
-      // Format 1: { token: "jwt..." } (from GitHub OAuth)
-      // Format 2: { token: "jwt...", email: "...", ... } (from email login)
       const token = parsed.token;
-      
+
       if (!token || typeof token !== "string") {
         setUser(null);
         setIsLoading(false);
@@ -73,12 +62,10 @@ export function useAuth(): UseAuthResult {
       let email: string | undefined;
       let role: string | undefined;
 
-      // If email is in storage, use it
       if (parsed.email) {
         email = parsed.email;
         role = parsed.role;
       } else {
-        // Otherwise, decode from JWT
         const payload = decodeJwtPayload(token);
         if (payload) {
           email = payload.email;

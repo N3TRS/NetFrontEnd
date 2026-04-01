@@ -6,6 +6,7 @@ import { MonacoEditor } from "./_components/Editor/MonacoEditor";
 import { useYjsSetup } from "./_hooks/useYjsSetup";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { useSessionApi } from "./_hooks/useSessionApi";
+import { useEditorStore } from "./_stores/editorStore";
 import { AlertCircle, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 
 function CodeEditorContent() {
@@ -15,20 +16,30 @@ function CodeEditorContent() {
 
   const { token, isLoading: authLoading } = useAuth();
   const { joinSession, getSession, error: apiError } = useSessionApi(token);
+  const { setSynced, setSessionId, setInviteCode } = useEditorStore();
 
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
-  // Initialize Yjs with the session ID
-  const serverUrl = process.env.NEXT_PUBLIC_SESSION_API_URL || "http://localhost:3001";
-  const { isSynced, isConnected, error: yjsError, reconnect } = useYjsSetup({
+  const serverUrl = (
+    process.env.NEXT_PUBLIC_SESSION_API_URL || "http://localhost:3002/api"
+  ).replace(/\/api$/, "");
+  const {
+    isSynced,
+    isConnected,
+    error: yjsError,
+    reconnect,
+  } = useYjsSetup({
     sessionId: sessionId || undefined,
     token: token || undefined,
     serverUrl,
   });
 
-  // Join session on mount
+  useEffect(() => {
+    if (isSynced) setSynced(true);
+  }, [isSynced, setSynced]);
+
   useEffect(() => {
     const joinAndLoadSession = async () => {
       if (!sessionId || !token || authLoading) return;
@@ -37,20 +48,17 @@ function CodeEditorContent() {
       setSessionError(null);
 
       try {
-        // Try to join the session
-        const joinResult = await joinSession(sessionId);
-        
-        if (joinResult) {
-          setSessionName(joinResult.name);
+        await joinSession(sessionId);
+
+        const sessionDetails = await getSession(sessionId);
+        if (sessionDetails) {
+          setSessionName(sessionDetails.name);
+          setInviteCode(sessionDetails.inviteCode);
         } else {
-          // If join fails, try to get session details (might already be a participant)
-          const sessionDetails = await getSession(sessionId);
-          if (sessionDetails) {
-            setSessionName(sessionDetails.name);
-          } else {
-            setSessionError(apiError || "No se pudo acceder a la sesión");
-          }
+          setSessionError(apiError || "No se pudo acceder a la sesión");
         }
+
+        setSessionId(sessionId);
       } catch (err) {
         setSessionError("Error al conectar con la sesión");
       } finally {
@@ -61,7 +69,6 @@ function CodeEditorContent() {
     joinAndLoadSession();
   }, [sessionId, token, authLoading, joinSession, getSession, apiError]);
 
-  // No session ID provided
   if (!sessionId) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
@@ -73,8 +80,8 @@ function CodeEditorContent() {
             Sesión no especificada
           </h2>
           <p className="text-sm text-muted-foreground mb-6">
-            Necesitas un ID de sesión para acceder al editor colaborativo.
-            Crea una nueva sesión o únete con un código de invitación.
+            Necesitas un ID de sesión para acceder al editor colaborativo. Crea
+            una nueva sesión o únete con un código de invitación.
           </p>
           <button
             onClick={() => router.push("/dashboard")}
@@ -88,21 +95,21 @@ function CodeEditorContent() {
     );
   }
 
-  // Loading states
   if (authLoading || isJoining) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
         <div className="text-center">
           <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">
-            {authLoading ? "Verificando autenticación..." : "Conectando a la sesión..."}
+            {authLoading
+              ? "Verificando autenticación..."
+              : "Conectando a la sesión..."}
           </p>
         </div>
       </div>
     );
   }
 
-  // Session error
   if (sessionError) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
@@ -113,9 +120,7 @@ function CodeEditorContent() {
           <h2 className="text-xl font-semibold text-white mb-2">
             Error de conexión
           </h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            {sessionError}
-          </p>
+          <p className="text-sm text-muted-foreground mb-6">{sessionError}</p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => router.push("/dashboard")}
@@ -137,7 +142,6 @@ function CodeEditorContent() {
     );
   }
 
-  // Connection status bar
   const ConnectionStatus = () => (
     <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
       {sessionName && (

@@ -18,6 +18,7 @@ import {
   getFileTreeArray,
   type FileNode,
 } from "../_lib/fileSystem/index";
+import { useEditorStore } from "../_stores/editorStore";
 
 interface UseFileTreeResult {
   treeData: FileNode[];
@@ -27,16 +28,35 @@ interface UseFileTreeResult {
   onDelete: DeleteHandler<FileNode>;
 }
 
+function findFirstFile(nodes: FileNode[]): FileNode | null {
+  for (const node of nodes) {
+    if (!node.children) return node;
+    const found = findFirstFile(node.children);
+    if (found) return found;
+  }
+  return null;
+}
+
 export function useFileTree(isSynced: boolean): UseFileTreeResult {
   const [treeData, setTreeData] = useState<FileNode[]>(() =>
     toArboristData(ydoc),
   );
+  const { openFile } = useEditorStore();
 
   useEffect(() => {
     if (!isSynced) return;
-    seedFileTree(ydoc);
-    setTreeData(toArboristData(ydoc));
-  }, [isSynced]);
+
+    const seededId = seedFileTree(ydoc);
+    const tree = toArboristData(ydoc);
+    setTreeData(tree);
+
+    if (seededId) {
+      openFile(seededId);
+    } else {
+      const firstFile = findFirstFile(tree);
+      if (firstFile) openFile(firstFile.id);
+    }
+  }, [isSynced, openFile]);
 
   useEffect(() => {
     const arr = getFileTreeArray(ydoc);

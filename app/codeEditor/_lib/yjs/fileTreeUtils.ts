@@ -179,76 +179,18 @@ export function deleteNodes(ydoc: Y.Doc, ids: string[]): void {
   });
 }
 
-export function seedFileTree(ydoc: Y.Doc): void {
-  if (getFileTreeArray(ydoc).length > 0) return;
+export function seedFileTree(ydoc: Y.Doc): string | null {
+  if (getFileTreeArray(ydoc).length > 0) return null;
 
-  type SeedNode = { name: string; isFolder: boolean; children?: SeedNode[] };
+  const fileId = createNode(ydoc, null, 0, "Main.java", false);
 
-  const seed: SeedNode[] = [
-    {
-      name: "src",
-      isFolder: true,
-      children: [
-        {
-          name: "main",
-          isFolder: true,
-          children: [
-            {
-              name: "java",
-              isFolder: true,
-              children: [
-                {
-                  name: "com",
-                  isFolder: true,
-                  children: [
-                    {
-                      name: "omnicode",
-                      isFolder: true,
-                      children: [
-                        { name: "Application.java", isFolder: false },
-                        { name: "Controller.java", isFolder: false },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              name: "resources",
-              isFolder: true,
-              children: [{ name: "application.properties", isFolder: false }],
-            },
-          ],
-        },
-        {
-          name: "test",
-          isFolder: true,
-          children: [],
-        },
-      ],
-    },
-    { name: "pom.xml", isFolder: false },
-    { name: "README.md", isFolder: false },
-  ];
-
-  function insert(
-    nodes: SeedNode[],
-    parentId: string | null,
-    startIndex: number,
-  ): void {
-    nodes.forEach((node, i) => {
-      const id = createNode(
-        ydoc,
-        parentId,
-        startIndex + i,
-        node.name,
-        node.isFolder,
-      );
-      if (node.isFolder && node.children && node.children.length > 0) {
-        insert(node.children, id, 0);
-      }
-    });
+  const ytext = getFileText(ydoc, fileId);
+  if (ytext.length === 0) {
+    ytext.insert(
+      0,
+      `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}`,
+    );
   }
 
-  insert(seed, null, 0);
+  return fileId;
 }

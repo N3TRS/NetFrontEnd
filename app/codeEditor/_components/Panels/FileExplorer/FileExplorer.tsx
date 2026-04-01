@@ -5,20 +5,36 @@ import { File, Folder, FolderOpen, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "../../../_stores/editorStore";
 import { useFileTree } from "../../../_hooks/useFileTree";
-import { useYjsSetup } from "../../../_hooks/useYjsSetup";
 import type { FileNode } from "../../../_lib/fileSystem/index";
 
-function NodeRenderer({ node, style, dragHandle }: NodeRendererProps<FileNode>) {
-  const isFolder = !!node.children;
+const TREE_WIDTH = 259;
+function NodeRenderer({
+  node,
+  style,
+  dragHandle,
+}: NodeRendererProps<FileNode>) {
+  const { openFile } = useEditorStore();
+  const isFolder = node.isInternal;
+
+  const handleClick = () => {
+    if (isFolder) {
+      node.toggle();
+    } else {
+      openFile(node.id);
+    }
+  };
 
   return (
     <div
       ref={dragHandle}
       style={style}
+      onClick={handleClick}
       className={cn(
         "flex cursor-pointer select-none items-center gap-1.5 rounded px-2 py-0.5 text-sm",
         "hover:bg-white/10",
-        node.isSelected ? "bg-white/10 text-foreground" : "text-muted-foreground",
+        node.isSelected
+          ? "bg-white/10 text-foreground"
+          : "text-muted-foreground",
       )}
     >
       {isFolder ? (
@@ -62,9 +78,9 @@ function NodeRenderer({ node, style, dragHandle }: NodeRendererProps<FileNode>) 
 }
 
 export function FileExplorer() {
-  const { isSynced } = useYjsSetup();
-  const { treeData, onCreate, onMove, onRename, onDelete } = useFileTree(isSynced);
-  const { openFile } = useEditorStore();
+  const { isSynced } = useEditorStore();
+  const { treeData, onCreate, onMove, onRename, onDelete } =
+    useFileTree(isSynced);
 
   return (
     <div className="flex h-full flex-col">
@@ -82,15 +98,10 @@ export function FileExplorer() {
             onMove={onMove}
             onRename={onRename}
             onDelete={onDelete}
-            onActivate={(node) => {
-              if (!node.children) {
-                openFile(node.id);
-              }
-            }}
             openByDefault={false}
             indent={16}
             rowHeight={28}
-            width="100%"
+            width={TREE_WIDTH}
           >
             {NodeRenderer}
           </Tree>
