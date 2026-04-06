@@ -46,7 +46,6 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Tech-Noir custom colors */
   --color-noir-bg: #0a0e14;
   --color-noir-purple-deep: #240046;
   --color-noir-purple-mid: #3C096C;
@@ -54,7 +53,6 @@
   --color-noir-orange: #FF8B10;
   --color-noir-orange-light: #FCA160;
 
-  /* Custom animations */
   --animate-blink: blink 4s ease-in-out infinite;
 }
 
@@ -142,7 +140,6 @@
   }
 }
 
-/* Tech-Noir utilities */
 .bg-grid-white {
   background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
@@ -158,7 +155,6 @@
   box-shadow: 0 0 50px -12px rgba(90, 24, 154, 0.5);
 }
 
-/* ─── Reusable layout utilities (Tailwind v4 @utility) ─────────────────── */
 @utility section-container {
   @apply w-full max-w-7xl px-6;
 }

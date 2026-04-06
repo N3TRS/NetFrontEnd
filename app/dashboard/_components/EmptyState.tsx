@@ -2,25 +2,31 @@
 
 import { Rocket } from "lucide-react";
 import { useShaderBackground } from "@/components/ui/animated-shader-hero";
+import { useState } from "react";
 
 interface EmptyStateProps {
-  onCreateProject: () => void;
+
+  onSelectProject: () => void;
+
 }
 
-export default function EmptyState({ onCreateProject }: EmptyStateProps) {
+
+export default function EmptyState({ onSelectProject }: EmptyStateProps) {
   const canvasRef = useShaderBackground();
+
+  const [configOpen, setConfigOpen] = useState(false);
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-white/10">
       <div className="absolute inset-0">
         <canvas
           ref={canvasRef}
-          className="absolute inset-0 w-full h-full touch-none"
+          className="absolute inset-0 w-full h-full touch-none pointer-events-none"
           style={{ background: "#0a0e14" }}
         />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center gap-6 py-20 px-8">
+      <div className="relative z-10 flex flex-col items-center justify-center gap-6 py-20 px-8 pointer-events-auto">
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
           <div className="relative w-20 h-20 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center backdrop-blur-sm">
@@ -33,17 +39,17 @@ export default function EmptyState({ onCreateProject }: EmptyStateProps) {
             No tienes sesiones activas
           </h3>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Crea tu primer proyecto para comenzar a trabajar. Configura Maven,
-            Java y todas las dependencias que necesites.
+            Escoge tu respositorio de Maven Spring-Boot
+            y preparate para hacer pruebas, sin tener que descargar nada localmente.
           </p>
         </div>
 
         <button
-          onClick={onCreateProject}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/85 text-primary-foreground font-semibold rounded-xl px-6 py-3 text-sm transition-all active:scale-95 cursor-pointer glow-orange"
+          className="cursor-pointer flex items-center gap-2 bg-primary hover:bg-primary/85 text-primary-foreground font-semibold rounded-xl px-6 py-3 text-sm transition-all active:scale-95 glow-orange"
+          onClick={onSelectProject}
         >
           <span className="text-lg font-bold">+</span>
-          <span>Crear Proyecto</span>
+          <span>Seleccionar Repositorio</span>
         </button>
       </div>
     </div>
