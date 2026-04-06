@@ -1,22 +1,26 @@
 "use client";
 
-import { FolderOpen, ArrowRight, Users, Link2 } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import EmptyState from "./_components/EmptyState";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useState } from "react";
 import SelectProject from "./_components/SelectProject";
-
+import type { GithubRepo } from "./_types/github-repo";
 
 export default function Dashboard() {
-
-  const { token, isLoading: authLoading } = useAuth();
+  const { token } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
+
+  const handleRepoSelected = (repo: GithubRepo) => {
+    console.log("Repo seleccionado:", repo.clone_url); //hola
+  };
 
   return (
     <>
       <div
-        className={`section-container mx-auto py-8 flex flex-col gap-8 transition-all duration-300  "blur-sm pointer-events-none select-none" : ""
-          }`}
+        className={`section-container mx-auto py-8 flex flex-col gap-8 transition-all duration-300 ${
+          configOpen ? "blur-sm pointer-events-none select-none" : ""
+        }`}
       >
         <hr className="border-white/5" />
 
@@ -28,9 +32,12 @@ export default function Dashboard() {
         </div>
         <EmptyState onSelectProject={() => setConfigOpen(true)} />
       </div>
+
       <SelectProject
         open={configOpen}
         onClose={() => setConfigOpen(false)}
+        token={token}
+        onRepoSelected={handleRepoSelected}
       />
     </>
   );

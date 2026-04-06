@@ -2,19 +2,13 @@
 
 import { Rocket } from "lucide-react";
 import { useShaderBackground } from "@/components/ui/animated-shader-hero";
-import { useState } from "react";
 
 interface EmptyStateProps {
-
   onSelectProject: () => void;
-
 }
-
 
 export default function EmptyState({ onSelectProject }: EmptyStateProps) {
   const canvasRef = useShaderBackground();
-
-  const [configOpen, setConfigOpen] = useState(false);
 
   return (
     <div className="relative w-full overflow-hidden rounded-2xl border border-white/10">
@@ -38,7 +32,7 @@ export default function EmptyState({ onSelectProject }: EmptyStateProps) {
           <h3 className="text-xl font-semibold text-white">
             No tienes sesiones activas
           </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-white leading-relaxed">
             Escoge tu respositorio de Maven Spring-Boot
             y preparate para hacer pruebas, sin tener que descargar nada localmente.
           </p>

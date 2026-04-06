@@ -28,7 +28,7 @@ export function signUpHook() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/signup`, {
+      const response = await fetch(`http://localhost:3000/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
