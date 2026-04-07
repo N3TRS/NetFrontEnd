@@ -6,6 +6,7 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { Box, HStack } from "@chakra-ui/react";
 import LanguageSelector from "./LanguageSelector";
+import Output from "./Output";
 import { CODE_SNIPPETS } from "../Utils/constants";
 
 const CodeEditor = () => {
@@ -52,11 +53,11 @@ const CodeEditor = () => {
 
     return (
         <Box>
-            <HStack spacing = {4}>
-                <Box w="50%" >
+            <HStack spacing={4} align="flex-start">
+                <Box w="50%">
                     <LanguageSelector language={language} onSelect={onSelect} />
                     <Editor
-                        height="80vh"
+                        height="75vh"
                         language={language}
                         value={value}
                         theme="vs-dark"
@@ -64,8 +65,11 @@ const CodeEditor = () => {
                         onChange={(newValue) => setValue(newValue)}
                     />
                 </Box>
+                <Output 
+                    code={value}
+                    language={language}
+                />
             </HStack>
-            
         </Box>
     )
 }
