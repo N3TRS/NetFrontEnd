@@ -21,7 +21,7 @@ function LanguageDot({ language }: { language: string }) {
   const color = LANGUAGE_COLORS[language] ?? "bg-gray-400";
   return (
     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${color}`} />
+      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${color}`} />
       {language}
     </span>
   );
@@ -40,7 +40,7 @@ export default function GithubRepoCard({ repo, onSelect }: GithubRepoCardProps) 
     >
       <div className="flex items-center gap-2 min-w-0">
         {repo.private && (
-          <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         )}
         <span className="text-sm font-medium text-white group-hover:text-primary transition-colors truncate">
           {repo.name}

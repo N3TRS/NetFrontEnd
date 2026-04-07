@@ -1,6 +1,6 @@
 "use client";
-
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { X, Search, RefreshCw } from "lucide-react";
 import { useGithubRepos } from "../_hooks/useGithubRepos";
 import GithubRepoCard from "./GithubRepoCard";
@@ -21,6 +21,8 @@ export default function SelectProject({
   const { repos, loading, error, refetch } = useGithubRepos(token);
   const [search, setSearch] = useState("");
   const [onlyJava, setOnlyJava] = useState(true);
+
+  const route = useRouter();
 
   const filteredRepos = useMemo(() => {
     let result = onlyJava
@@ -88,20 +90,18 @@ export default function SelectProject({
             <button
               onClick={refetch}
               title="Actualizar"
-              className="flex-shrink-0 text-muted-foreground hover:text-white transition-colors cursor-pointer"
+              className="shrink-0 text-muted-foreground hover:text-white transition-colors cursor-pointer"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
           )}
         </div>
-
         {!loading && !error && (
           <p className="px-6 pt-3 text-[11px] text-muted-foreground">
             {filteredRepos.length}{" "}
             {filteredRepos.length === 1 ? "repositorio" : "repositorios"}
           </p>
         )}
-
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
           {loading && (
             <div className="flex flex-col gap-2 mt-2">
@@ -116,7 +116,6 @@ export default function SelectProject({
               ))}
             </div>
           )}
-
           {error && !loading && (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <p className="text-sm text-muted-foreground">{error}</p>
@@ -128,7 +127,6 @@ export default function SelectProject({
               </button>
             </div>
           )}
-
           {!loading && !error && filteredRepos.length > 0 && (
             <div className="flex flex-col gap-2 mt-2">
               {filteredRepos.map((repo) => (
