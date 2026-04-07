@@ -5,10 +5,12 @@ import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useState } from "react";
 import SelectProject from "./_components/SelectProject";
 import type { GithubRepo } from "./_types/github-repo";
+import { useRouter } from "next/navigation"; 
 
 export default function Dashboard() {
   const { token } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
+  const router = useRouter();
 
   const handleRepoSelected = (repo: GithubRepo) => {
     console.log("Repo seleccionado:", repo.clone_url);
@@ -24,6 +26,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <FolderOpen className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-bold">Sesiones</h2>
+            <button onClick={() => router.push("/codeEditor")} className="cursor-pointer">
+              Ver sesiones
+            </button>
           </div>
         </div>
         <hr className="border-white/5" />
