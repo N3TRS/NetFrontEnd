@@ -39,7 +39,7 @@ export default function SelectProject({
 
   const handleSelect = (repo: GithubRepo) => {
     onRepoSelected?.(repo);
-    onClose();
+    route.push('running')
   };
 
   const handleClose = () => {
