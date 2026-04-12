@@ -1,208 +1,209 @@
 # NetFrontEnd
 
-IDE colaborativo en tiempo real para programación en el navegador. Escribe, ejecuta y comparte código con otros desarrolladores simultáneamente, sin necesidad de configurar tu máquina local.
+Real-time collaborative IDE for programming in your browser. Write, execute, and share code with other developers simultaneously, without needing to configure your local machine.
 
-NetFrontEnd es parte de **OmniCode** — *The Future of Collaborative Coding* (El futuro de la programación colaborativa). Una plataforma diseñada para que múltiples usuarios programen juntos en tiempo real, ejecuten código instantáneamente y colaboren en proyectos desde cualquier lugar.
+NetFrontEnd is part of **OmniCode** — *The Future of Collaborative Coding*. A platform designed for multiple users to code together in real-time, execute code instantly, and collaborate on projects from anywhere.
 
-## Características Principales
+## Key Features
 
-- **Editor de Código Colaborativo**: Edita código simultáneamente con otros usuarios. Los cambios se sincronizan en tiempo real con cursores múltiples visibles.
-- **Ejecución Instantánea**: Ejecuta código en JavaScript, TypeScript, Python y Java sin necesidad de instalar compiladores. Obtén resultados inmediatos.
-- **Integración GitHub**: Importa repositorios directamente desde tu cuenta de GitHub y ejecuta código desde tus proyectos.
+- **Collaborative Code Editor**: Edit code simultaneously with other users. Changes sync in real-time with multiple visible cursors.
+- **Instant Code Execution**: Run code in JavaScript, TypeScript, Python, and Java without needing to install compilers. Get results immediately.
+- **GitHub Integration**: Import repositories directly from your GitHub account and execute code from your projects.
 
-## Comenzar
+## Getting Started
 
-Estas instrucciones te permitirán obtener una copia del proyecto ejecutándose en tu máquina local para desarrollo.
+These instructions will get you a copy of the project up and running on your local machine for development.
 
-### Requisitos Previos
+### Prerequisites
 
-Necesitarás tener instalado:
+You'll need to have installed:
 
-- **Node.js** versión 18 o superior. Descárgalo desde [nodejs.org](https://nodejs.org/)
-- Un gestor de paquetes: **npm**, **pnpm**, **bun** o **yarn**
+- **Node.js** version 18 or higher. Download from [nodejs.org](https://nodejs.org/)
+- A package manager: **npm**, **pnpm**, **bun**, or **yarn**
 
-Verifica que los tienes instalados:
+Verify you have them installed:
 
 ```bash
-node --version  # v18.x.x o superior
-npm --version   # o pnpm --version, bun --version, yarn --version
+node --version  # v18.x.x or higher
+npm --version   # or pnpm --version, bun --version, yarn --version
 ```
 
-### Instalación
+### Installation
 
-**1. Clona el repositorio**
+**1. Clone the repository**
 
 ```bash
 git clone https://github.com/N3TRS/NetFrontEnd.git
 cd NetFrontEnd
 ```
 
-**2. Instala las dependencias**
+**2. Install dependencies**
 
-Elige el gestor de paquetes que prefieras:
+Choose your preferred package manager:
 
 ```bash
-# Con npm
+# With npm
 npm install
 
-# Con pnpm
+# With pnpm
 pnpm install
 
-# Con bun
+# With bun
 bun install
 
-# Con yarn
+# With yarn
 yarn install
 ```
 
-**3. Inicia el servidor de desarrollo**
+**3. Start the development server**
 
 ```bash
-# Con npm
+# With npm
 npm run dev
 
-# Con pnpm
+# With pnpm
 pnpm dev
 
-# Con bun
+# With bun
 bun dev
 
-# Con yarn
+# With yarn
 yarn dev
 ```
 
-El servidor estará disponible en `http://localhost:3000`. Abre tu navegador y accede a esa URL para ver la aplicación en funcionamiento.
+The server will be available at `http://localhost:3000`. Open your browser and navigate to that URL to see the application running.
 
-## Cómo Usar
+## How to Use
 
-### Programar en Tiempo Real
+### Real-Time Collaborative Programming
 
-1. Crea una cuenta o inicia sesión con tu cuenta de GitHub
-2. Accede al dashboard
-3. Selecciona o crea una sesión de programación
-4. Comparte el enlace de la sesión con otros usuarios
-5. Comienza a escribir código — los cambios se sincronizan automáticamente
+1. Create an account or sign in with your GitHub account
+2. Access the dashboard
+3. Select or create a programming session
+4. Share the session link with other users
+5. Start writing code — changes sync automatically
 
-### Ejecutar Código
+### Execute Code
 
-1. Escribe tu código en el editor
-2. Selecciona el lenguaje (JavaScript, TypeScript, Python o Java)
-3. Haz clic en el botón "Run Code"
-4. La salida se mostrará en el panel derecho en tiempo real
+1. Write your code in the editor
+2. Select the language (JavaScript, TypeScript, Python, or Java)
+3. Click the "Run Code" button
+4. Output will display in the right panel in real-time
 
-### Usar Repositorios GitHub
+### Use GitHub Repositories
 
-1. Desde el dashboard, selecciona "Seleccionar Proyecto"
-2. Busca y selecciona un repositorio de tu cuenta
-3. El código del repositorio se cargará en el editor
-4. Ejecuta y edita el código colaborativamente
+1. From the dashboard, select "Select Project"
+2. Search and select a repository from your account
+3. The repository code will load in the editor
+4. Execute and edit the code collaboratively
 
-## Compilación para Producción
+## Production Build
 
-Para crear una compilación optimizada lista para producción:
+To create an optimized production build:
 
 ```bash
-npm run build   # o: pnpm build, bun build, yarn build
+npm run build   # or: pnpm build, bun build, yarn build
 ```
 
-Esto generará los archivos optimizados en el directorio `.next/`.
+This will generate optimized files in the `.next/` directory.
 
-Para iniciar el servidor de producción localmente:
+To start the production server locally:
 
 ```bash
-npm start       # o: pnpm start, bun start, yarn start
+npm start       # or: pnpm start, bun start, yarn start
 ```
 
-## Hecho con
+## Built With
 
-- [Next.js](https://nextjs.org/) - Framework React moderno con SSR y file-based routing
-- [React](https://react.dev/) - Librería JavaScript para construir interfaces de usuario
-- [TypeScript](https://www.typescriptlang.org/) - Tipado estático para JavaScript
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Editor de código potente y personalizable (usado en VSCode)
-- [Tailwind CSS](https://tailwindcss.com/) - Framework de estilos utility-first para diseño moderno
-- [Chakra UI](https://chakra-ui.com/) - Librería de componentes accesibles y reutilizables
-- [Socket.io](https://socket.io/) - Comunicación en tiempo real bidireccional
+- [Next.js](https://nextjs.org/) - Modern React framework with SSR and file-based routing
+- [React](https://react.dev/) - JavaScript library for building user interfaces
+- [TypeScript](https://www.typescriptlang.org/) - Static typing for JavaScript
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Powerful and customizable code editor (used in VSCode)
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework for modern design
+- [Chakra UI](https://chakra-ui.com/) - Library of accessible and reusable components
+- [Socket.io](https://socket.io/) - Bidirectional real-time communication
 
-## Arquitectura
+## Architecture
 
-NetFrontEnd se comunica con:
+NetFrontEnd communicates with:
 
-- **Backend API** - Para autenticación, gestión de usuarios y sesiones
-- **Piston API** - Para compilación y ejecución de código
-- **GitHub OAuth** - Para autenticación y acceso a repositorios
+- **Backend API** - For authentication, user management, and sessions
+- **Piston API** - For code compilation and execution
+- **GitHub OAuth** - For authentication and repository access
 
-El flujo típico:
+Typical flow:
 
-1. Usuario se autentica con GitHub u email/password
-2. Se obtiene un JWT token almacenado en el navegador
-3. Usuario accede al editor colaborativo
-4. Los cambios de código se envían al backend
-5. Al hacer clic "Run Code", se envía a Piston API para ejecución
+1. User authenticates with GitHub or email/password
+2. JWT token is obtained and stored in the browser
+3. User accesses the collaborative editor
+4. Code changes are sent to the backend
+5. Clicking "Run Code" sends the code to Piston API for execution
 
-## Desarrollo
+## Development
 
-### Scripts Disponibles
+### Available Scripts
 
 ```bash
-# Desarrollar con hot reload
+# Develop with hot reload
 npm run dev
 
-# Compilar para producción
+# Build for production
 npm run build
 
-# Iniciar servidor producción (requiere build previo)
+# Start production server (requires prior build)
 npm start
 
-# Validar código con ESLint
+# Validate code with ESLint
 npm run lint
 ```
 
-### Estructura del Proyecto
+### Project Structure
 
 ```
 NetFrontEnd/
-├── app/                    # Rutas y páginas (Next.js 13+ App Router)
-│   ├── (landing)/          # Página de inicio
-│   ├── auth/               # Autenticación
-│   ├── login/              # Formulario de login
-│   ├── register/           # Formulario de registro
-│   ├── dashboard/          # Panel principal
-│   ├── codeEditor/         # Editor de código colaborativo
-│   ├── globals.css         # Estilos globales
-│   └── layout.tsx          # Layout raíz
-├── components/             # Componentes reutilizables
-│   └── ui/                 # Componentes shadcn/ui
-├── lib/                    # Funciones utilitarias
-├── public/                 # Archivos estáticos
-└── package.json            # Dependencias y scripts
+├── app/                    # Routes and pages (Next.js 13+ App Router)
+│   ├── (landing)/          # Landing page
+│   ├── auth/               # Authentication
+│   ├── login/              # Login form
+│   ├── register/           # Registration form
+│   ├── dashboard/          # Main dashboard
+│   ├── codeEditor/         # Collaborative code editor
+│   ├── globals.css         # Global styles
+│   └── layout.tsx          # Root layout
+├── components/             # Reusable components
+│   └── ui/                 # shadcn/ui components
+├── lib/                    # Utility functions
+├── public/                 # Static files
+└── package.json            # Dependencies and scripts
 ```
 
 ## Deployment
 
-NetFrontEnd está deployado en [Vercel](https://vercel.com/). La URL de la aplicación en vivo se encuentra en el repositorio de GitHub.
+NetFrontEnd is deployed on [Vercel](https://vercel.com/). The live application URL can be found in the GitHub repository.
 
-Para deployar tu propia instancia en Vercel:
+To deploy your own instance on Vercel:
 
-1. Haz fork del repositorio
-2. Conéctalo a tu cuenta de Vercel
-3. Configura las variables de entorno necesarias
-4. Vercel automáticamente deployará en cada push a main
+1. Fork the repository
+2. Connect it to your Vercel account
+3. Configure necessary environment variables
+4. Vercel will automatically deploy on each push to main
 
-## Autores
+## Authors
 
-- **Tulio Riaño Sánchez** - *Desarrollador Principal* - [GitHub](https://github.com/TulioRianSanchez)
-- **Julián López Barrero** - *Desarrollador* - [GitHub](https://github.com/JulianLopez11)
-- **Alejandro Henao** - *Desarrollador* - [GitHub](https://github.com/AlejandroHenao2572)
-- **Sebastián Puentes** - *Desarrollador* - [GitHub](https://github.com/orgs/N3TRS/people/sebasPuentes)
+- **Tulio Riaño Sánchez** - *Lead Developer* - [GitHub](https://github.com/tulio3101)
+- **Julián López Barrero** - *Developer* - [GitHub](https://github.com/JulianLopez11)
+- **Alejandro Henao** - *Developer* - [GitHub](https://github.com/AlejandroHenao2572)
+- **Sebastián Puentes** - *Developer* - [GitHub](https://github.com/sebaspuentes)
+- **OpenCode** - *Developer* - [GitHub](https://github.com/anomalyco/opencode)
 
-Ver la lista completa de [contribuidores](https://github.com/N3TRS/NetFrontEnd/graphs/contributors).
+See the complete list of [contributors](https://github.com/N3TRS/NetFrontEnd/graphs/contributors).
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la Licencia MIT — ver el archivo [LICENSE](LICENSE) para más detalles.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
-## Reconocimientos
+## Acknowledgments
 
-- Inspirado en plataformas colaborativas como Replit y Codeshare
-- Agradecimientos a los desarrolladores de Monaco Editor, Tailwind CSS y Next.js
-- Comunidad de desarrolladores open source que hace posible proyectos como este
+- Inspired by collaborative platforms like Replit and Codeshare
+- Thanks to the developers of Monaco Editor, Tailwind CSS, and Next.js
+- Open source developer community that makes projects like this possible
