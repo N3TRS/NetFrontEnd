@@ -2,7 +2,11 @@
 
 import { ChakraProvider, defaultSystem } from "@chakra-ui/react";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export default function CodeEditorLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ChakraProvider value={defaultSystem}>
       {children}

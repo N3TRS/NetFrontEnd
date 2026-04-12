@@ -1,5 +1,6 @@
 import FooterSection from "./_components/FooterSection";
 import NavBar from "./_components/Navbar";
+
 export default function LandingLayout({
   children,
 }: {
