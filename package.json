@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.34.0",
     "@monaco-editor/react": "^4.7.0",
+    "axios": "^1.14.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
@@ -29,6 +31,7 @@
     "y-indexeddb": "^9.0.12",
     "y-monaco": "^0.1.6",
     "y-webrtc": "^10.3.0",
+    "y-websocket": "^3.0.0",
     "yjs": "^13.6.30",
     "zustand": "^5.0.12"
   },
