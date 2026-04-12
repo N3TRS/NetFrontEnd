@@ -191,9 +191,9 @@ Para deployar tu propia instancia en Vercel:
 ## Autores
 
 - **Tulio Riaño Sánchez** - *Desarrollador Principal* - [GitHub](https://github.com/TulioRianSanchez)
-- **Julián López Barrero** - *Desarrollador* - [GitHub](https://github.com/JulianLopezBarrero)
-- **Juan Puentes Julio** - *Desarrollador* - [GitHub](https://github.com/JuanPuentesJulio)
-- **Alejandro Patatón Henao** - *Desarrollador* - [GitHub](https://github.com/AlejandroPataton)
+- **Julián López Barrero** - *Desarrollador* - [GitHub](https://github.com/JulianLopez11)
+- **Alejandro Henao** - *Desarrollador* - [GitHub](https://github.com/AlejandroHenao2572)
+- **Sebastián Puentes** - *Desarrollador* - [GitHub](https://github.com/orgs/N3TRS/people/sebasPuentes)
 
 Ver la lista completa de [contribuidores](https://github.com/N3TRS/NetFrontEnd/graphs/contributors).
 
