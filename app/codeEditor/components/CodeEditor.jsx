@@ -10,67 +10,66 @@ import Output from "./Output";
 import { CODE_SNIPPETS } from "../Utils/constants";
 
 const CodeEditor = () => {
-    const editorRef = useRef(null);
-    const monacoRef = useRef(null);
-    const [language, setLanguage] = useState("javascript");
-    const [value, setValue] = useState(CODE_SNIPPETS["javascript"]);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const [language, setLanguage] = useState("javascript");
+  const [value, setValue] = useState(CODE_SNIPPETS["javascript"]);
 
-    async function handleEditorDidMount(editor, monaco) {
-        editorRef.current = editor;
-        monacoRef.current = monaco;
-        
-        // Importar MonacoBinding dinámicamente solo en el cliente
-        const { MonacoBinding } = await import("y-monaco");
-        
-        // Initialize Yjs and the WebSocket provider
-        const ydoc = new Y.Doc();
-        const provider = new WebsocketProvider("ws://localhost:1234", "test-room", ydoc);
-        const type = ydoc.getText("monaco"); 
-        
-        // Bind the Monaco editor to the Yjs document
-        const binding = new MonacoBinding(
-            type, 
-            editorRef.current.getModel(), 
-            new Set([editorRef.current]), 
-            provider.awareness
-        );
+  async function handleEditorDidMount(editor, monaco) {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
+    const { MonacoBinding } = await import("y-monaco");
+
+    // Initialize Yjs and the WebSocket provider
+    const ydoc = new Y.Doc();
+    const provider = new WebsocketProvider("ws://localhost:1234", "test-room", ydoc);
+    const type = ydoc.getText("monaco");
+
+    // Bind the Monaco editor to the Yjs document
+    const binding = new MonacoBinding(
+      type,
+      editorRef.current.getModel(),
+      new Set([editorRef.current]),
+      provider.awareness
+    );
+  }
+
+  // Efecto para actualizar el lenguaje cuando cambia
+  useEffect(() => {
+    if (editorRef.current && monacoRef.current) {
+      const model = editorRef.current.getModel();
+      if (model) {
+        monacoRef.current.editor.setModelLanguage(model, language);
+      }
     }
+  }, [language]);
 
-    // Efecto para actualizar el lenguaje cuando cambia
-    useEffect(() => {
-        if (editorRef.current && monacoRef.current) {
-            const model = editorRef.current.getModel();
-            if (model) {
-                monacoRef.current.editor.setModelLanguage(model, language);
-            }
-        }
-    }, [language]);
+  const onSelect = (newLanguage) => {
+    setLanguage(newLanguage);
+    setValue(CODE_SNIPPETS[newLanguage]);
+  }
 
-    const onSelect = (newLanguage) => {
-        setLanguage(newLanguage);
-        setValue(CODE_SNIPPETS[newLanguage]);
-    }
-
-    return (
-        <Box>
-            <HStack spacing={4} align="flex-start">
-                <Box w="50%">
-                    <LanguageSelector language={language} onSelect={onSelect} />
-                    <Editor
-                        height="75vh"
-                        language={language}
-                        value={value}
-                        theme="vs-dark"
-                        onMount={handleEditorDidMount}
-                        onChange={(newValue) => setValue(newValue)}
-                    />
-                </Box>
-                <Output 
-                    code={value}
-                    language={language}
-                />
-            </HStack>
+  return (
+    <Box>
+      <HStack spacing={4} align="flex-start">
+        <Box w="50%">
+          <LanguageSelector language={language} onSelect={onSelect} />
+          <Editor
+            height="75vh"
+            language={language}
+            value={value}
+            theme="vs-dark"
+            onMount={handleEditorDidMount}
+            onChange={(newValue) => setValue(newValue)}
+          />
         </Box>
-    )
+        <Output
+          code={value}
+          language={language}
+        />
+      </HStack>
+    </Box>
+  )
 }
 export default CodeEditor;
