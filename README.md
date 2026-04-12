@@ -190,11 +190,10 @@ To deploy your own instance on Vercel:
 
 ## Authors
 
-- **Tulio Riaño Sánchez** - *Lead Developer* - [GitHub](https://github.com/tulio3101)
+- **Tulio Riaño Sánchez** - *Developer* - [GitHub](https://github.com/tulio3101)
 - **Julián López Barrero** - *Developer* - [GitHub](https://github.com/JulianLopez11)
 - **Alejandro Henao** - *Developer* - [GitHub](https://github.com/AlejandroHenao2572)
 - **Sebastián Puentes** - *Developer* - [GitHub](https://github.com/sebaspuentes)
-- **OpenCode** - *Developer* - [GitHub](https://github.com/anomalyco/opencode)
 
 See the complete list of [contributors](https://github.com/N3TRS/NetFrontEnd/graphs/contributors).
 
