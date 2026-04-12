@@ -1,12 +1,8 @@
-"use client";
-
 import Image from "next/image";
 import omnicodeImage from "@/public/OmniCodeDocumentation.png";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Documentation() {
-  const router = useRouter();
-
   return (
     <div className="flex flex-col items-center px-6 py-10">
       <div className="w-full max-w-4xl flex flex-col items-center gap-8">
@@ -38,18 +34,18 @@ export default function Documentation() {
         </p>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/")}
-            className="cursor-pointer px-5 py-2.5 text-sm font-semibold rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95"
+          <Link
+            href="/"
+            className="cursor-pointer px-5 py-2.5 text-sm font-semibold rounded-lg border border-white/10 bg-white/5 text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 inline-block"
           >
             Página Principal
-          </button>
-          <button
-            onClick={() => router.push("/login")}
-            className="cursor-pointer px-5 py-2.5 text-sm font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/85 hover:scale-105 transition-all active:scale-95 glow-orange"
+          </Link>
+          <Link
+            href="/login"
+            className="cursor-pointer px-5 py-2.5 text-sm font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/85 hover:scale-105 transition-all active:scale-95 glow-orange inline-block"
           >
             Inicio Rápido
-          </button>
+          </Link>
         </div>
 
       </div>
