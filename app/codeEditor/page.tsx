@@ -4,7 +4,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { MonacoEditor } from "./_components/Editor/MonacoEditor";
 import { useYjsSetup } from "./_hooks/useYjsSetup";
-import { useAuth } from "@/app/_hooks/useAuth";
+import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useSessionApi } from "./_hooks/useSessionApi";
 import { useEditorStore } from "./_stores/editorStore";
 import { AlertCircle, Loader2, RefreshCw, ArrowLeft } from "lucide-react";

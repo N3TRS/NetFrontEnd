@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   token: string;
   role?: string;
+  avatarUrl?: string;
 }
 
 interface UseAuthResult {
@@ -19,7 +20,7 @@ interface UseAuthResult {
 
 function decodeJwtPayload(
   token: string,
-): { email?: string; role?: string } | null {
+): { email?: string; role?: string; avatarUrl?: string } | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
@@ -61,20 +62,23 @@ export function useAuth(): UseAuthResult {
 
       let email: string | undefined;
       let role: string | undefined;
+      let avatarUrl: string | undefined;
 
       if (parsed.email) {
         email = parsed.email;
         role = parsed.role;
+        avatarUrl = parsed.avatarUrl;
       } else {
         const payload = decodeJwtPayload(token);
         if (payload) {
           email = payload.email;
           role = payload.role;
+          avatarUrl = payload.avatarUrl;
         }
       }
 
       if (email) {
-        setUser({ email, token, role });
+        setUser({ email, token, role, avatarUrl });
       } else {
         setUser(null);
       }

@@ -76,7 +76,7 @@ export default function LoginForm({
         onClick={handleGithubLogin}
       >
         <GitHubIcon />
-        Iniciar con GitHub
+        Continuar Con GitHub
       </Button>
 
       <div className="relative flex items-center">

@@ -96,7 +96,7 @@ export default function RegistrationForm({
           aria-hidden="true"
           className="size-5 shrink-0"
         />
-        Sign up with GitHub
+        Continuar con GitHub
       </Button>
 
       <div className="relative flex items-center">

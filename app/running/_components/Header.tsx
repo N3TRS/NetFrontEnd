@@ -1,12 +1,12 @@
-"use client";
-import { useState, useEffect, useRef } from "react";
-import { Terminal, UserCircle, LogOut } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+"use client"
 import { useAuth } from "@/app/auth/_hooks/useAuth";
+import { LogOut, Terminal, UserCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import Image from "next/image";
 
-export default function NavBar() {
+export default function HeaderRunnning() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,12 +19,12 @@ export default function NavBar() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, []);
 
   const handleLogout = () => {
     logout();
-    router.push("/");
+    router.push('/');
   };
 
   return (
@@ -37,19 +37,14 @@ export default function NavBar() {
           <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent text-2xl font-bold">
             OmniCode
           </span>
-        </Link>
 
-        <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden items-center gap-8 text-sm font-medium opacity-80 md:flex">
-          <a href="/dashboard/sessions" className="transition-colors hover:text-primary">
-            Sesiones
-          </a>
-        </nav>
+        </Link>
 
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
             className="cursor-pointer rounded-full focus:outline-none"
-            aria-label="Menú de usuario"
+            aria-label="Menú de Usuario"
           >
             {user?.avatarUrl ? (
               <Image
@@ -63,9 +58,8 @@ export default function NavBar() {
               <UserCircle className="h-10 w-10 text-muted-foreground" />
             )}
           </button>
-
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-65 rounded-xl border border-white/10 bg-[#0d1117] shadow-[0_0_30px_-10px_rgba(0,0,0,0.8)] py-1">
+            <div className="absolute right-0 mt-2 w-65 rounded-xl border border-white/10 bg-[#od1117] shadow-[0_0_30px_-10px_rgba(0,0,0,0.8)] py-1">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="text-xs text-muted-foreground truncate">
                   {user?.email}
@@ -83,5 +77,9 @@ export default function NavBar() {
         </div>
       </div>
     </header>
+
   );
+
 }
+
+
