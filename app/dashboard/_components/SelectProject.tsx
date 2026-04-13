@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { X, Search, RefreshCw } from "lucide-react";
 import { useGithubRepos } from "../_hooks/useGithubRepos";
+import { useProject } from "@/app/_contexts/ProjectContext";
 import GithubRepoCard from "./GithubRepoCard";
 import type { GithubRepo } from "../_types/github-repo";
 
@@ -23,6 +24,7 @@ export default function SelectProject({
   const [onlyJava, setOnlyJava] = useState(true);
 
   const route = useRouter();
+  const { setProjectUrl } = useProject();
 
   const filteredRepos = useMemo(() => {
     let result = onlyJava
@@ -39,6 +41,7 @@ export default function SelectProject({
 
   const handleSelect = (repo: GithubRepo) => {
     onRepoSelected?.(repo);
+    setProjectUrl(repo.clone_url);
     route.push('running')
   };
 
