@@ -17,6 +17,7 @@ const CodeEditor = () => {
   const monacoRef = useRef(null);
   const providerRef = useRef(null);
   const ydocRef = useRef(null);
+  const [editorReady, setEditorReady] = useState(false);
   const searchParams = useSearchParams();
   const { token, user } = useAuth();
 
@@ -30,7 +31,7 @@ const CodeEditor = () => {
 
   const yjsWsBase =
     process.env.NEXT_PUBLIC_YJS_WS_URL ||
-    "ws://localhost:1234";
+    "ws://localhost:3002/ws/yjs";
 
   const { isConnected, emitLanguageChanged } = useSessionSocket({
     token,
@@ -53,30 +54,57 @@ const CodeEditor = () => {
   async function handleEditorDidMount(editor, monaco) {
     editorRef.current = editor;
     monacoRef.current = monaco;
-
-    const { MonacoBinding } = await import("y-monaco");
-
-    // Initialize Yjs and the WebSocket provider
-    const ydoc = new Y.Doc();
-    const room = sessionId || "default-room";
-    const provider = new WebsocketProvider(yjsWsBase, room, ydoc);
-    const type = ydoc.getText("monaco");
-
-    ydocRef.current = ydoc;
-    providerRef.current = provider;
-
-    new MonacoBinding(
-      type,
-      editorRef.current.getModel(),
-      new Set([editorRef.current]),
-      provider.awareness
-    );
-
-    provider.awareness.setLocalStateField("user", {
-      name: user?.email || "anonymous",
-      color: "#22d3ee",
-    });
+    setEditorReady(true);
   }
+
+  useEffect(() => {
+    if (!editorReady || !sessionId || !token || !editorRef.current) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const setup = async () => {
+      const { MonacoBinding } = await import("y-monaco");
+
+      if (cancelled || !editorRef.current) {
+        return;
+      }
+
+      const ydoc = new Y.Doc();
+      const provider = new WebsocketProvider(yjsWsBase, sessionId, ydoc, {
+        params: {
+          token,
+        },
+      });
+      const type = ydoc.getText("monaco");
+
+      ydocRef.current = ydoc;
+      providerRef.current = provider;
+
+      new MonacoBinding(
+        type,
+        editorRef.current.getModel(),
+        new Set([editorRef.current]),
+        provider.awareness
+      );
+
+      provider.awareness.setLocalStateField("user", {
+        name: user?.email || "anonymous",
+        color: "#22d3ee",
+      });
+    };
+
+    void setup();
+
+    return () => {
+      cancelled = true;
+      providerRef.current?.destroy();
+      ydocRef.current?.destroy();
+      providerRef.current = null;
+      ydocRef.current = null;
+    };
+  }, [editorReady, sessionId, token, user?.email, yjsWsBase]);
 
   useEffect(() => {
     if (editorRef.current && monacoRef.current) {
@@ -86,15 +114,6 @@ const CodeEditor = () => {
       }
     }
   }, [language]);
-
-  useEffect(() => {
-    return () => {
-      providerRef.current?.destroy();
-      ydocRef.current?.destroy();
-      providerRef.current = null;
-      ydocRef.current = null;
-    };
-  }, []);
 
   const onSelect = (newLanguage) => {
     setLanguage(newLanguage);
