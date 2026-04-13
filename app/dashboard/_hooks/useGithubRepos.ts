@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { GithubRepo } from "../_types/github-repo";
 
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:3000";
 
 interface UseGithubReposResult {
   repos: GithubRepo[];
@@ -24,7 +23,7 @@ export function useGithubRepos(token: string | null): UseGithubReposResult {
     setError(null);
 
     try {
-      const response = await fetch(`${AUTH_API_URL}/users/github/repos`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_APIGATEWAY}/users/github/repos`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

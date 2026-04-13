@@ -2,7 +2,7 @@
 
 export function githubLoginHook() {
   const handleGithubLogin = () => {
-    window.location.href = `http://localhost:3000/auth/github`;
+    window.location.href = `${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/auth/github`;
   };
 
   return { handleGithubLogin };
