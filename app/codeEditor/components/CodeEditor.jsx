@@ -11,6 +11,20 @@ import Output from "./Output";
 import { CODE_SNIPPETS } from "../Utils/constants";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useSessionSocket } from "../hooks/useSessionSocket";
+import { saveSessionSnapshot } from "../api";
+
+function extractErrorMessage(error, fallback) {
+  if (error && typeof error === "object") {
+    if (error.response?.data?.message) {
+      return String(error.response.data.message);
+    }
+    if (error.message) {
+      return String(error.message);
+    }
+  }
+
+  return fallback;
+}
 
 const CodeEditor = () => {
   const editorRef = useRef(null);
@@ -28,6 +42,8 @@ const CodeEditor = () => {
   const [value, setValue] = useState(CODE_SNIPPETS["javascript"]);
   const [lastResult, setLastResult] = useState(null);
   const [participantsOnline, setParticipantsOnline] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
 
   const yjsWsBase =
     process.env.NEXT_PUBLIC_YJS_WS_URL ||
@@ -124,6 +140,25 @@ const CodeEditor = () => {
     }
   };
 
+  const handleSaveSession = async () => {
+    if (!token || !sessionId) {
+      setSaveMessage("No hay sesion activa para guardar.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveMessage("");
+
+      await saveSessionSnapshot(token, sessionId, language, value || "");
+      setSaveMessage("Sesion guardada correctamente.");
+    } catch (error) {
+      setSaveMessage(extractErrorMessage(error, "No se pudo guardar la sesion."));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Box>
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
@@ -131,10 +166,25 @@ const CodeEditor = () => {
           Session: {sessionId || "not-selected"}
           {inviteCode ? ` | Invite: ${inviteCode}` : ""}
         </Text>
-        <Text fontSize="sm" color={isConnected ? "green.300" : "orange.300"}>
-          {isConnected ? `Connected (${participantsOnline})` : "Disconnected"}
-        </Text>
+        <Box display="flex" alignItems="center" gap={3}>
+          <Text fontSize="sm" color={isConnected ? "green.300" : "orange.300"}>
+            {isConnected ? `Connected (${participantsOnline})` : "Disconnected"}
+          </Text>
+          <button
+            type="button"
+            onClick={handleSaveSession}
+            disabled={!sessionId || !token || isSaving}
+            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSaving ? "Guardando..." : "Guardar sesion"}
+          </button>
+        </Box>
       </Box>
+      {saveMessage ? (
+        <Text mb={3} fontSize="xs" color={saveMessage.includes("correctamente") ? "green.300" : "red.300"}>
+          {saveMessage}
+        </Text>
+      ) : null}
       <HStack spacing={4} align="flex-start">
         <Box w="50%">
           <LanguageSelector language={language} onSelect={onSelect} />

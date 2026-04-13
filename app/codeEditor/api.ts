@@ -67,3 +67,23 @@ export const executeCode = async (
 
   return response.data;
 };
+
+export const saveSessionSnapshot = async (
+  token: string,
+  sessionId: string,
+  language: keyof typeof LANGUAGE_VERSIONS,
+  code: string,
+) => {
+  const response = await API_URL.post(
+    `/sessions/${sessionId}/snapshots`,
+    {
+      language: PISTON_LANGUAGE_MAP[language],
+      code,
+    },
+    {
+      headers: authHeaders(token),
+    },
+  );
+
+  return response.data;
+};
