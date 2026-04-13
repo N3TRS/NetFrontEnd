@@ -2,7 +2,7 @@ import axios from 'axios';
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP, FILE_EXTENSIONS } from './Utils/constants';
 
 const API_URL = axios.create({
-  baseURL: 'https://emkc.org/api/v2/piston',
+  baseURL: '/api/code',
 });
 
 export const executeCode = async (language: keyof typeof LANGUAGE_VERSIONS, code: string) => {
