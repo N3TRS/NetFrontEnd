@@ -1,0 +1,109 @@
+/* Terminal Theme Animations */
+
+/* Pulse animation with prefers-reduced-motion support */
+@keyframes terminal-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.terminal-pulse {
+  animation: terminal-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal-pulse {
+    animation: none;
+    opacity: 0.75;
+  }
+}
+
+/* Status indicator animation */
+@keyframes status-glow {
+  0% {
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 8px currentColor;
+  }
+  100% {
+    box-shadow: 0 0 4px currentColor;
+  }
+}
+
+.status-indicator-running {
+  animation: status-glow 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-indicator-running {
+    animation: none;
+    box-shadow: none;
+  }
+}
+
+/* Smooth transitions */
+.transition-theme {
+  @apply transition-colors duration-200;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transition-theme {
+    @apply transition-none;
+  }
+}
+
+/* Focus visible styles with motion preference */
+.focus-ring {
+  @apply focus-visible:ring-2 focus-visible:ring-offset-2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-ring {
+    @apply focus-visible:ring-2;
+  }
+}
+
+/* Light theme variables */
+.light {
+  color-scheme: light;
+  --terminal-bg-primary: #ffffff;
+  --terminal-bg-secondary: #f6f8fa;
+  --terminal-text-primary: #0d1117;
+  --terminal-text-secondary: #424a52;
+  --terminal-border: rgba(0, 0, 0, 0.1);
+  --terminal-status-running: #0969da;
+  --terminal-status-completed: #1a7f37;
+  --terminal-status-failed: #d1242f;
+  --terminal-accent: #0969da;
+}
+
+/* Dark theme variables */
+.dark {
+  color-scheme: dark;
+  --terminal-bg-primary: rgba(26, 31, 46, 0.95);
+  --terminal-bg-secondary: rgba(26, 31, 46, 0.8);
+  --terminal-text-primary: #e6edf3;
+  --terminal-text-secondary: #8b949e;
+  --terminal-border: rgba(255, 255, 255, 0.1);
+  --terminal-status-running: #ff8b10;
+  --terminal-status-completed: #50fa7b;
+  --terminal-status-failed: #ff5555;
+  --terminal-accent: #ff8b10;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .terminal-responsive-hide-sm {
+    @apply hidden;
+  }
+}
+
+@media (min-width: 768px) {
+  .terminal-responsive-show-md {
+    @apply flex;
+  }
+}

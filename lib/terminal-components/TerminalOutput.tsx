@@ -3,43 +3,12 @@
 import { useEffect, useMemo } from "react"
 import { useXTerm } from "react-xtermjs"
 import { FitAddon } from "@xterm/addon-fit"
+import { useTheme } from "@/lib/theme/useTheme"
+import { xtermColors } from "@/lib/theme/colors"
 import "@xterm/xterm/css/xterm.css"
 
 interface TerminalOutputProps {
   logs: string[]
-}
-
-const terminalOptions = {
-  allowTransparency: true,
-  theme: {
-    background: "rgba(26, 31, 46, 0.95)",
-    foreground: "#e6edf3",
-    cursor: "#FF8B10",
-    cursorAccent: "#0a0e14",
-    selectionBackground: "#5A189A55",
-    black: "#0a0e14",
-    red: "#ff5555",
-    green: "#50fa7b",
-    yellow: "#f1fa8c",
-    blue: "#7b93f5",
-    magenta: "#FF8B10",
-    cyan: "#8be9fd",
-    white: "#c9d1d9",
-    brightBlack: "#4d4d4d",
-    brightRed: "#ff6e67",
-    brightGreen: "#5af78e",
-    brightYellow: "#f4f99d",
-    brightBlue: "#caa9fa",
-    brightMagenta: "#ff92d0",
-    brightCyan: "#9aedfe",
-    brightWhite: "#e6edf3",
-  },
-  fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
-  fontSize: 13,
-  lineHeight: 1.4,
-  cursorBlink: true,
-  cursorStyle: "block" as const,
-  scrollback: 1000,
 }
 
 const LOG_LEVEL_COLORS: Record<string, { color: string; indicator: string }> = {
@@ -61,6 +30,21 @@ const colorizeLog = (line: string): string => {
 }
 
 export default function TerminalOutput({ logs }: TerminalOutputProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const themeColors = isDark ? xtermColors.dark : xtermColors.light
+
+  const terminalOptions = useMemo(() => ({
+    allowTransparency: true,
+    theme: themeColors,
+    fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+    fontSize: 13,
+    lineHeight: 1.4,
+    cursorBlink: true,
+    cursorStyle: "block" as const,
+    scrollback: 1000,
+  }), [themeColors])
+
   const fitAddon = useMemo(() => new FitAddon(), [])
   const addons = useMemo(() => [fitAddon], [fitAddon])
   const { ref, instance } = useXTerm({ options: terminalOptions, addons })
@@ -70,7 +54,14 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
 
     fitAddon.fit()
 
-    const observer = new ResizeObserver(() => fitAddon.fit())
+    const observer = new ResizeObserver(() => {
+      try {
+        fitAddon.fit()
+      } catch (e) {
+        // Handle resize edge cases
+      }
+    })
+    
     if (ref.current) observer.observe(ref.current)
 
     return () => observer.disconnect()
@@ -85,8 +76,24 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
   }, [logs, instance])
 
   return (
-    <div className="flex-1 min-h-0 rounded-none overflow-hidden border border-white/5">
-      <div ref={ref} style={{ height: "100%", width: "100%" }} />
+    <div 
+      className="flex-1 min-h-0 rounded-none overflow-hidden border transition-theme"
+      style={{
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+      }}
+      role="region"
+      aria-label="Terminal output area"
+    >
+      <div 
+        ref={ref} 
+        style={{ 
+          height: "100%", 
+          width: "100%",
+          overflow: 'hidden',
+          overscrollBehavior: 'contain',
+        }} 
+      />
     </div>
   )
 }
+

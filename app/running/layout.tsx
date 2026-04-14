@@ -7,7 +7,7 @@ export default function RunningLayout({
 }) {
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col transition-theme">
       <HeaderRunnning />
       <main className="grow pb-10">{children}</main>
     </div>

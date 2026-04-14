@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTheme } from "@/lib/theme/useTheme"
+import { terminalColors } from "@/lib/theme/colors"
 
 type FooterStatus = "idle" | "running" | "completed" | "failed"
 
@@ -33,6 +35,9 @@ export default function TerminalFooter({
   exitCode,
 }: TerminalFooterProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  const colors = isDark ? terminalColors.dark : terminalColors.light
 
   useEffect(() => {
     if (status !== "running" || !startTime) {
@@ -51,52 +56,78 @@ export default function TerminalFooter({
   const getStatusColor = (): string => {
     switch (status) {
       case "running":
-        return "text-orange-500"
+        return colors.status.running
       case "completed":
-        return "text-green-500"
+        return colors.status.completed
       case "failed":
-        return "text-red-500"
+        return colors.status.failed
       default:
-        return "text-gray-400"
+        return colors.text.tertiary
     }
   }
 
   const getStatusText = (): string => {
     switch (status) {
       case "running":
-        return "RUNNING"
+        return "EJECUTÁNDOSE"
       case "completed":
-        return "COMPLETED"
+        return "COMPLETADO"
       case "failed":
-        return "FAILED"
+        return "FALLIDO"
       default:
-        return "No active job"
+        return "Sin trabajo activo"
     }
   }
 
-  const getFooterContent = (): string => {
+  const getFooterContent = (): { main: string; secondary?: string } => {
     if (status === "idle") {
-      return "No active job"
+      return { main: "Sin trabajo activo" }
     }
 
     if (status === "failed") {
       const duration = formatDuration(elapsedSeconds)
-      const exitCodeText = exitCode !== undefined ? ` | Exit Code: ${exitCode}` : ""
-      return `Job: ${jobName} | FAILED → ${exitCodeText} | Duration: ${duration} | Logs: ${logCount} lines`
+      const exitCodeText = exitCode !== undefined ? ` | Código: ${exitCode}` : ""
+      return { 
+        main: `${jobName || 'Job'} | FALLIDO → ${exitCodeText}`,
+        secondary: `Duración: ${duration} | Líneas: ${logCount}`
+      }
     }
 
     const startTimeStr = startTime ? formatTime(startTime) : ""
     const duration = formatDuration(elapsedSeconds)
-    const statusStr = status === "running" ? "RUNNING" : "COMPLETED"
+    const statusStr = status === "running" ? "EJECUTÁNDOSE" : "COMPLETADO"
 
-    return `Job: ${jobName} | ${statusStr} → Started: ${startTimeStr} | Duration: ${duration} | Logs: ${logCount} lines`
+    return {
+      main: `${jobName || 'Job'} | ${statusStr} → Inicio: ${startTimeStr}`,
+      secondary: `Duración: ${duration} | Líneas: ${logCount}`
+    }
   }
+
+  const footerContent = getFooterContent()
 
   return (
     <div
-      className={`px-6 py-3 border-t border-white/5 bg-[rgba(26,31,46,0.8)] font-jetbrains-mono text-xs ${getStatusColor()}`}
+      className="px-4 py-3 sm:px-6 sm:py-3 border-t font-jetbrains-mono text-xs sm:text-sm transition-theme space-y-1"
+      style={{
+        backgroundColor: colors.bg.secondary,
+        borderTopColor: colors.border.primary,
+        color: getStatusColor(),
+      }}
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
     >
-      {getFooterContent()}
+      <div className="flex flex-col sm:flex-row gap-1 sm:gap-0">
+        <span className="truncate">{footerContent.main}</span>
+      </div>
+      {footerContent.secondary && (
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-0">
+          <span className="truncate text-xs" style={{ color: colors.text.secondary }}>
+            {footerContent.secondary}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
+

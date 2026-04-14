@@ -144,7 +144,7 @@ export default function TerminalRunning() {
   }, [terminalState.errorMessage])
 
   return (
-    <div className="flex flex-col h-screen bg-[rgba(26,31,46,0.95)] overflow-hidden">
+    <div className="w-full max-w-7xl mx-auto px-6 md:px-10 py-6 flex flex-col h-auto gap-4">
       <TerminalHeader status={terminalState.status} />
 
       <TerminalControls
