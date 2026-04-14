@@ -14,7 +14,6 @@ export default function HeaderRunnning() {
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Handle click outside to close menu
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -25,7 +24,6 @@ export default function HeaderRunnning() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, []);
 
-  // Handle keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setMenuOpen(false);
@@ -44,9 +42,8 @@ export default function HeaderRunnning() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-primary/10 backdrop-blur-md">
       <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
-        {/* Logo - Left */}
-        <Link 
-          href="/dashboard" 
+        <Link
+          href="/dashboard"
           className="flex items-center gap-3 focus-ring rounded-lg"
         >
           <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
@@ -57,12 +54,10 @@ export default function HeaderRunnning() {
           </span>
         </Link>
 
-        {/* Theme Toggle - Center */}
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <ModeToggle />
         </div>
 
-        {/* User Menu - Right */}
         <div className="relative" ref={menuRef}>
           <button
             ref={menuButtonRef}
@@ -87,7 +82,7 @@ export default function HeaderRunnning() {
           </button>
 
           {menuOpen && (
-            <div 
+            <div
               className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 bg-[#0d1117] shadow-[0_0_30px_-10px_rgba(0,0,0,0.8)] py-1"
               role="menu"
               aria-orientation="vertical"

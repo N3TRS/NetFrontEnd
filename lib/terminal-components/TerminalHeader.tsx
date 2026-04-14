@@ -20,7 +20,7 @@ export default function TerminalHeader({ status }: TerminalHeaderProps) {
   } = useTerminalStyles({ status })
 
   return (
-    <div 
+    <div
       className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-4 sm:px-6 sm:py-4 border-b md:gap-3 transition-theme"
       style={{
         backgroundColor: baseStyles.backgroundColor,
@@ -28,13 +28,13 @@ export default function TerminalHeader({ status }: TerminalHeaderProps) {
       }}
     >
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <div 
-          className={`w-3 h-3 rounded-full flex-shrink-0 ${getStatusAnimation()}`}
+        <div
+          className={`w-3 h-3 rounded-full shrink-0 ${getStatusAnimation()}`}
           style={{ color: getStatusColor() }}
           aria-label={`Estado: ${getStatusText()}`}
           role="status"
         ></div>
-        <span 
+        <span
           className="font-jetbrains-mono font-bold text-base sm:text-lg transition-theme"
           style={{ color: getStatusColor() }}
         >
@@ -43,7 +43,7 @@ export default function TerminalHeader({ status }: TerminalHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-0 w-full sm:w-auto">
-        <div 
+        <div
           className="font-jetbrains-mono text-xs sm:text-sm font-semibold transition-theme"
           style={{ color: getStatusColor() }}
           aria-live="polite"

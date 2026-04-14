@@ -20,7 +20,7 @@ export default function TerminalControls({
   const { runButtonStyles, clearButtonStyles } = useTerminalButtonStyles()
 
   return (
-    <div 
+    <div
       className="flex flex-col gap-3 sm:gap-4 px-4 py-4 sm:px-6 sm:py-4 border-b transition-theme touch-action-manipulation"
       style={{
         backgroundColor: baseStyles.backgroundColor,
@@ -28,13 +28,13 @@ export default function TerminalControls({
       }}
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
-        <span 
-          className="text-xs sm:text-sm font-jetbrains-mono transition-theme flex-shrink-0"
+        <span
+          className="text-xs sm:text-sm font-jetbrains-mono transition-theme shrink-0"
           style={textSecondary}
         >
           Repositorio:
         </span>
-        <span 
+        <span
           className="text-xs sm:text-sm font-jetbrains-mono truncate transition-theme"
           style={textPrimary}
         >

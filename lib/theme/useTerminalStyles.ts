@@ -8,18 +8,12 @@ interface TerminalStylesConfig {
   status?: TerminalStatus
 }
 
-/**
- * Hook centralizado para obtener estilos del terminal
- * Utiliza CSS variables definidas en globals.css para temas dinámicos
- */
 export function useTerminalStyles(config?: TerminalStylesConfig) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
   const status = config?.status || 'idle'
 
-  /**
-   * Obtiene el color del estado basado en CSS variables
-   */
+
   const getStatusColor = (): string => {
     switch (status) {
       case 'running':
@@ -33,16 +27,11 @@ export function useTerminalStyles(config?: TerminalStylesConfig) {
     }
   }
 
-  /**
-   * Obtiene la clase de animación basada en el estado
-   */
+
   const getStatusAnimation = (): string => {
     return status === 'running' ? 'terminal-pulse' : ''
   }
 
-  /**
-   * Obtiene el texto del estado en español
-   */
   const getStatusText = (): string => {
     switch (status) {
       case 'running':
@@ -56,9 +45,6 @@ export function useTerminalStyles(config?: TerminalStylesConfig) {
     }
   }
 
-  /**
-   * Estilos base para componentes (usando CSS variables)
-   */
   const baseStyles = {
     backgroundColor: 'var(--terminal-bg-primary)',
     borderColor: 'var(--terminal-border)',
@@ -90,9 +76,6 @@ export function useTerminalStyles(config?: TerminalStylesConfig) {
   }
 }
 
-/**
- * Hook para estilos específicos de botones del terminal
- */
 export function useTerminalButtonStyles() {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'

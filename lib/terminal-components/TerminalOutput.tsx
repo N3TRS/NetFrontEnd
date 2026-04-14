@@ -19,11 +19,6 @@ const LOG_LEVEL_COLORS: Record<string, { color: string; indicator: string }> = {
 
 const RESET_COLOR = "\x1b[0m"
 
-/**
- * Reads xterm color configuration from CSS variables
- * Extracts colors defined in globals.css (:root and .dark sections)
- * Supports automatic theme switching via CSS variables
- */
 const getXTermColorsFromCSS = () => {
   const root = document.documentElement
   const computedStyle = getComputedStyle(root)
