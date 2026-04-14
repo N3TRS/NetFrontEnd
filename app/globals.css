@@ -97,16 +97,37 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  /* Terminal variables - Light theme */
-  --terminal-bg-primary: #ffffff;
-  --terminal-bg-secondary: #f6f8fa;
-  --terminal-text-primary: #0d1117;
-  --terminal-text-secondary: #424a52;
-  --terminal-border: rgba(0, 0, 0, 0.1);
-  --terminal-status-running: #0969da;
-  --terminal-status-completed: #1a7f37;
-  --terminal-status-failed: #d1242f;
-  --terminal-accent: #0969da;
+   --terminal-bg-primary: #ffffff;
+   --terminal-bg-secondary: #f6f8fa;
+   --terminal-text-primary: #0d1117;
+   --terminal-text-secondary: #424a52;
+   --terminal-border: rgba(0, 0, 0, 0.1);
+   --terminal-status-running: #0969da;
+   --terminal-status-completed: #1a7f37;
+   --terminal-status-failed: #d1242f;
+   --terminal-accent: #0969da;
+   /* xterm 256-color palette - Light theme */
+   --xterm-background: #ffffff;
+   --xterm-foreground: #0d1117;
+   --xterm-cursor: #0969da;
+   --xterm-cursorAccent: #ffffff;
+   --xterm-selectionBackground: #0969da33;
+   --xterm-black: #0d1117;
+   --xterm-red: #d1242f;
+   --xterm-green: #1a7f37;
+   --xterm-yellow: #9e6a03;
+   --xterm-blue: #0969da;
+   --xterm-magenta: #8250df;
+   --xterm-cyan: #0184bc;
+   --xterm-white: #6e7681;
+   --xterm-brightBlack: #57606a;
+   --xterm-brightRed: #f85149;
+   --xterm-brightGreen: #3fb950;
+   --xterm-brightYellow: #d29922;
+   --xterm-brightBlue: #58a6ff;
+   --xterm-brightMagenta: #bc8ef9;
+   --xterm-brightCyan: #79c0ff;
+   --xterm-brightWhite: #e6edf3;
 }
 
 .dark {
@@ -142,15 +163,37 @@
   --sidebar-accent-foreground: oklch(0.85 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #FF8B10;
-  --terminal-bg-primary: rgba(26, 31, 46, 0.95);
-  --terminal-bg-secondary: rgba(26, 31, 46, 0.8);
-  --terminal-text-primary: #e6edf3;
-  --terminal-text-secondary: #8b949e;
-  --terminal-border: rgba(255, 255, 255, 0.1);
-  --terminal-status-running: #ff8b10;
-  --terminal-status-completed: #50fa7b;
-  --terminal-status-failed: #ff5555;
-  --terminal-accent: #ff8b10;
+   --terminal-bg-primary: rgba(26, 31, 46, 0.95);
+   --terminal-bg-secondary: rgba(26, 31, 46, 0.8);
+   --terminal-text-primary: #e6edf3;
+   --terminal-text-secondary: #8b949e;
+   --terminal-border: rgba(255, 255, 255, 0.1);
+   --terminal-status-running: #ff8b10;
+   --terminal-status-completed: #50fa7b;
+   --terminal-status-failed: #ff5555;
+   --terminal-accent: #ff8b10;
+   /* xterm 256-color palette - Dark theme */
+   --xterm-background: rgba(26, 31, 46, 0.95);
+   --xterm-foreground: #e6edf3;
+   --xterm-cursor: #ff8b10;
+   --xterm-cursorAccent: #0a0e14;
+   --xterm-selectionBackground: #5a189a55;
+   --xterm-black: #0a0e14;
+   --xterm-red: #ff5555;
+   --xterm-green: #50fa7b;
+   --xterm-yellow: #f1fa8c;
+   --xterm-blue: #7b93f5;
+   --xterm-magenta: #ff8b10;
+   --xterm-cyan: #8be9fd;
+   --xterm-white: #c9d1d9;
+   --xterm-brightBlack: #4d4d4d;
+   --xterm-brightRed: #ff6e67;
+   --xterm-brightGreen: #5af78e;
+   --xterm-brightYellow: #f4f99d;
+   --xterm-brightBlue: #caa9fa;
+   --xterm-brightMagenta: #ff92d0;
+   --xterm-brightCyan: #9aedfe;
+   --xterm-brightWhite: #e6edf3;
 }
 
 @layer base {
@@ -185,9 +228,7 @@
   @apply rounded-2xl border border-white/10 bg-white/5;
 }
 
-/* Terminal Theme Animations */
 
-/* Pulse animation with prefers-reduced-motion support */
 @keyframes terminal-pulse {
   0%, 100% {
     opacity: 1;
@@ -208,7 +249,6 @@
   }
 }
 
-/* Status indicator animation */
 @keyframes status-glow {
   0% {
     box-shadow: 0 0 4px currentColor;
@@ -232,7 +272,6 @@
   }
 }
 
-/* Smooth transitions */
 .transition-theme {
   @apply transition-colors duration-200;
 }
@@ -243,7 +282,6 @@
   }
 }
 
-/* Focus visible styles with motion preference */
 .focus-ring {
   @apply focus-visible:ring-2 focus-visible:ring-offset-2;
 }
@@ -254,12 +292,10 @@
   }
 }
 
-/* Light theme utilities */
 .light {
   color-scheme: light;
 }
 
-/* Responsive utilities */
 @media (max-width: 768px) {
   .terminal-responsive-hide-sm {
     @apply hidden;
