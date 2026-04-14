@@ -22,7 +22,7 @@ interface TerminalState {
 
 export default function TerminalRunning() {
   const { projectUrl } = useProject()
-  const { submitBuild, streamLogs, closeStream } = useNetOrchestrator()
+  const { submitBuild, streamLogs } = useNetOrchestrator()
   const [terminalState, setTerminalState] = useState<TerminalState>({
     status: "idle",
     isRunning: false,
@@ -33,8 +33,7 @@ export default function TerminalRunning() {
     errorMessage: null,
   })
 
-  const eventSourceRef = useRef<EventSource | null>(null)
-
+  const cancelStreamRef = useRef<(() => void) | null>(null)
 
   const handleRun = useCallback(async () => {
     if (!projectUrl) {
@@ -64,38 +63,31 @@ export default function TerminalRunning() {
         jobName,
       }))
 
-      const eventSource = streamLogs(
-        jobName,
-        {
-          onLog: (line: string) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              logs: [...prev.logs, line],
-            }))
-          },
-          onError: (error: string) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              errorMessage: error,
-            }))
-          },
-          onComplete: (exitCode?: number) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              status: exitCode === 0 || exitCode === undefined ? "completed" : "failed",
-              isRunning: false,
-              exitCode,
-            }))
-            if (eventSourceRef.current) {
-              closeStream(eventSourceRef.current)
-              eventSourceRef.current = null
-            }
-          },
+      const cancel = streamLogs(jobName, {
+        onLog: (line: string) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            logs: [...prev.logs, line],
+          }))
         },
-        3
-      )
+        onError: (error: string) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            errorMessage: error,
+          }))
+        },
+        onComplete: (exitCode?: number) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            status: exitCode === 0 || exitCode === undefined ? "completed" : "failed",
+            isRunning: false,
+            exitCode,
+          }))
+          cancelStreamRef.current = null
+        },
+      })
 
-      eventSourceRef.current = eventSource
+      cancelStreamRef.current = cancel
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : "Failed to submit build"
@@ -107,14 +99,11 @@ export default function TerminalRunning() {
         errorMessage: errorMsg,
       }))
     }
-  }, [projectUrl, submitBuild, streamLogs, closeStream])
-
+  }, [projectUrl, submitBuild, streamLogs])
 
   const handleClear = useCallback(() => {
-    if (eventSourceRef.current) {
-      closeStream(eventSourceRef.current)
-      eventSourceRef.current = null
-    }
+    cancelStreamRef.current?.()
+    cancelStreamRef.current = null
 
     setTerminalState({
       status: "idle",
@@ -125,17 +114,13 @@ export default function TerminalRunning() {
       exitCode: undefined,
       errorMessage: null,
     })
-  }, [closeStream])
-
+  }, [])
 
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        closeStream(eventSourceRef.current)
-      }
+      cancelStreamRef.current?.()
     }
-  }, [closeStream])
-
+  }, [])
 
   useEffect(() => {
     if (terminalState.errorMessage) {

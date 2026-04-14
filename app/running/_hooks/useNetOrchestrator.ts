@@ -1,6 +1,6 @@
 "use client"
 
-const ORCHESTRATOR_URL = "http://localhost:3001"
+const ORCHESTRATOR_BASE = "/api/orchestrator"
 
 interface SubmitBuildResponse {
   jobName: string
@@ -16,7 +16,7 @@ interface StreamLogsCallbacks {
 export const useNetOrchestrator = () => {
   const submitBuild = async (repoUrl: string): Promise<string> => {
     try {
-      const response = await fetch(`${ORCHESTRATOR_URL}/orchestrator/run`, {
+      const response = await fetch(`${ORCHESTRATOR_BASE}/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -37,67 +37,88 @@ export const useNetOrchestrator = () => {
 
   const streamLogs = (
     jobName: string,
-    callbacks: StreamLogsCallbacks,
-    maxRetries: number = 3
-  ): EventSource | null => {
-    let retries = 0
-    let eventSource: EventSource | null = null
+    callbacks: StreamLogsCallbacks
+  ): (() => void) => {
+    let cancelled = false
 
-    const connect = (): void => {
+    const run = async () => {
       try {
-        eventSource = new EventSource(
-          `${ORCHESTRATOR_URL}/orchestrator/logs/${jobName}`
-        )
+        const response = await fetch(`${ORCHESTRATOR_BASE}/logs/${jobName}`, {
+          headers: {
+            Accept: "text/event-stream",
+            "Cache-Control": "no-cache",
+          },
+        })
 
-        eventSource.onmessage = (event: MessageEvent) => {
-          const logLine = event.data
-          callbacks.onLog(logLine)
+        if (!response.ok || !response.body) {
+          callbacks.onError(`Failed to connect: ${response.statusText}`)
+          callbacks.onComplete(-1)
+          return
         }
 
-        eventSource.onerror = () => {
-          eventSource?.close()
-          eventSource = null
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ""
+        let hasReceivedData = false
 
-          if (retries < maxRetries) {
-            retries++
-            setTimeout(() => {
-              connect()
-            }, 2000)
-          } else {
-            callbacks.onError(
-              `Connection failed after ${maxRetries} attempts`
-            )
-            callbacks.onComplete(-1)
+        while (!cancelled) {
+          let done: boolean
+          let value: Uint8Array | undefined
+
+          try {
+            const result = await reader.read()
+            done = result.done
+            value = result.value
+          } catch {
+            // Browser throws "Error in input stream" when server closes the
+            // SSE connection — treat as normal completion if data was received
+            if (!cancelled) callbacks.onComplete(hasReceivedData ? 0 : -1)
+            return
+          }
+
+          if (done) break
+
+          hasReceivedData = true
+          buffer += decoder.decode(value, { stream: true })
+
+          const lines = buffer.split("\n")
+          buffer = lines.pop() ?? ""
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue
+            let data = line.slice(6).trim()
+            // Handle NestJS JSON-wrapped format: {"data": "..."}
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed && typeof parsed.data === "string") {
+                data = parsed.data
+              }
+            } catch {
+              // plain text, use as-is
+            }
+            if (data) callbacks.onLog(data)
           }
         }
+
+        if (!cancelled) callbacks.onComplete(0)
       } catch (error) {
-        if (retries < maxRetries) {
-          retries++
-          setTimeout(() => {
-            connect()
-          }, 2000)
-        } else {
+        if (!cancelled) {
           callbacks.onError(
-            `Failed to connect: ${error instanceof Error ? error.message : "Unknown error"}`
+            error instanceof Error ? error.message : "Unknown error"
           )
           callbacks.onComplete(-1)
         }
       }
     }
 
-    connect()
-    return eventSource
-  }
-
-  const closeStream = (eventSource: EventSource | null): void => {
-    if (eventSource) {
-      eventSource.close()
+    run()
+    return () => {
+      cancelled = true
     }
   }
 
   return {
     submitBuild,
     streamLogs,
-    closeStream,
   }
 }
