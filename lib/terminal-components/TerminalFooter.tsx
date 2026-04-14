@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useTheme } from "@/lib/theme/useTheme"
-import { terminalColors } from "@/lib/theme/colors"
+import { useTerminalStyles } from "@/lib/theme/useTerminalStyles"
 
 type FooterStatus = "idle" | "running" | "completed" | "failed"
 
@@ -35,9 +34,7 @@ export default function TerminalFooter({
   exitCode,
 }: TerminalFooterProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-  const colors = isDark ? terminalColors.dark : terminalColors.light
+  const { getStatusColor, getStatusText, secondaryStyles, textSecondary } = useTerminalStyles({ status: status as any })
 
   useEffect(() => {
     if (status !== "running" || !startTime) {
@@ -52,32 +49,6 @@ export default function TerminalFooter({
 
     return () => clearInterval(interval)
   }, [status, startTime])
-
-  const getStatusColor = (): string => {
-    switch (status) {
-      case "running":
-        return colors.status.running
-      case "completed":
-        return colors.status.completed
-      case "failed":
-        return colors.status.failed
-      default:
-        return colors.text.tertiary
-    }
-  }
-
-  const getStatusText = (): string => {
-    switch (status) {
-      case "running":
-        return "EJECUTÁNDOSE"
-      case "completed":
-        return "COMPLETADO"
-      case "failed":
-        return "FALLIDO"
-      default:
-        return "Sin trabajo activo"
-    }
-  }
 
   const getFooterContent = (): { main: string; secondary?: string } => {
     if (status === "idle") {
@@ -109,8 +80,8 @@ export default function TerminalFooter({
     <div
       className="px-4 py-3 sm:px-6 sm:py-3 border-t font-jetbrains-mono text-xs sm:text-sm transition-theme space-y-1"
       style={{
-        backgroundColor: colors.bg.secondary,
-        borderTopColor: colors.border.primary,
+        backgroundColor: secondaryStyles.backgroundColor,
+        borderTopColor: secondaryStyles.borderColor,
         color: getStatusColor(),
       }}
       role="status"
@@ -122,7 +93,7 @@ export default function TerminalFooter({
       </div>
       {footerContent.secondary && (
         <div className="flex flex-col sm:flex-row gap-1 sm:gap-0">
-          <span className="truncate text-xs" style={{ color: colors.text.secondary }}>
+          <span className="truncate text-xs" style={textSecondary}>
             {footerContent.secondary}
           </span>
         </div>

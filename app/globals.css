@@ -185,7 +185,9 @@
   @apply rounded-2xl border border-white/10 bg-white/5;
 }
 
+/* Terminal Theme Animations */
 
+/* Pulse animation with prefers-reduced-motion support */
 @keyframes terminal-pulse {
   0%, 100% {
     opacity: 1;
@@ -206,6 +208,7 @@
   }
 }
 
+/* Status indicator animation */
 @keyframes status-glow {
   0% {
     box-shadow: 0 0 4px currentColor;
@@ -229,6 +232,7 @@
   }
 }
 
+/* Smooth transitions */
 .transition-theme {
   @apply transition-colors duration-200;
 }
@@ -239,6 +243,7 @@
   }
 }
 
+/* Focus visible styles with motion preference */
 .focus-ring {
   @apply focus-visible:ring-2 focus-visible:ring-offset-2;
 }
@@ -249,10 +254,12 @@
   }
 }
 
+/* Light theme utilities */
 .light {
   color-scheme: light;
 }
 
+/* Responsive utilities */
 @media (max-width: 768px) {
   .terminal-responsive-hide-sm {
     @apply hidden;
@@ -264,3 +271,5 @@
     @apply flex;
   }
 }
+
+

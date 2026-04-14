@@ -1,8 +1,7 @@
 "use client"
 
 import { Loader } from "lucide-react"
-import { useTheme } from "@/lib/theme/useTheme"
-import { terminalColors } from "@/lib/theme/colors"
+import { useTerminalStyles, useTerminalButtonStyles } from "@/lib/theme/useTerminalStyles"
 
 interface TerminalControlsProps {
   projectUrl: string | null
@@ -17,64 +16,27 @@ export default function TerminalControls({
   onRun,
   onClear,
 }: TerminalControlsProps) {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-  const colors = isDark ? terminalColors.dark : terminalColors.light
-
-  const runButtonStyles = {
-    default: {
-      backgroundColor: colors.status.running,
-      color: isDark ? '#ffffff' : '#ffffff',
-      border: 'none',
-    },
-    hover: {
-      backgroundColor: isDark ? colors.status.running : '#0a5db5',
-    },
-    disabled: {
-      backgroundColor: colors.bg.secondary,
-      color: colors.text.secondary,
-      cursor: 'not-allowed',
-      opacity: 0.6,
-    },
-  }
-
-  const clearButtonStyles = {
-    default: {
-      backgroundColor: colors.button.bg,
-      color: colors.text.primary,
-      borderColor: colors.border.primary,
-      borderWidth: '1px',
-    },
-    hover: {
-      backgroundColor: colors.button.bgHover,
-    },
-    disabled: {
-      backgroundColor: colors.bg.secondary,
-      color: colors.text.secondary,
-      cursor: 'not-allowed',
-      opacity: 0.6,
-      borderColor: colors.border.secondary,
-    },
-  }
+  const { baseStyles, textSecondary, textPrimary } = useTerminalStyles()
+  const { runButtonStyles, clearButtonStyles } = useTerminalButtonStyles()
 
   return (
     <div 
       className="flex flex-col gap-3 sm:gap-4 px-4 py-4 sm:px-6 sm:py-4 border-b transition-theme touch-action-manipulation"
       style={{
-        backgroundColor: colors.bg.primary,
-        borderBottomColor: colors.border.primary,
+        backgroundColor: baseStyles.backgroundColor,
+        borderBottomColor: baseStyles.borderColor,
       }}
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2">
         <span 
           className="text-xs sm:text-sm font-jetbrains-mono transition-theme flex-shrink-0"
-          style={{ color: colors.text.secondary }}
+          style={textSecondary}
         >
           Repositorio:
         </span>
         <span 
           className="text-xs sm:text-sm font-jetbrains-mono truncate transition-theme"
-          style={{ color: colors.text.primary }}
+          style={textPrimary}
         >
           {projectUrl || "No hay repositorio seleccionado"}
         </span>
