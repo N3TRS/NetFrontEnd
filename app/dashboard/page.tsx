@@ -18,6 +18,8 @@ export default function Dashboard() {
   const {
     sessionName,
     setSessionName,
+    language,
+    setLanguage,
     inviteCode,
     setInviteCode,
     isCreating,
@@ -103,10 +105,12 @@ export default function Dashboard() {
       <CreateSessionModal
         open={createOpen}
         sessionName={sessionName}
+        language={language}
         isCreating={isCreating}
         error={createError}
         canCreate={canCreate}
         onChangeSessionName={setSessionName}
+        onChangeLanguage={(value) => setLanguage(value as typeof language)}
         onClose={closeCreateModal}
         onCreate={handleCreateSession}
       />

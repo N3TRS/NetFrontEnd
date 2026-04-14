@@ -8,7 +8,7 @@ import { Box, HStack, Text } from "@chakra-ui/react";
 import { useSearchParams } from "next/navigation";
 import LanguageSelector from "./LanguageSelector";
 import Output from "./Output";
-import { CODE_SNIPPETS } from "../Utils/constants";
+import { LANGUAGE_VERSIONS } from "../Utils/constants";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useSessionSocket } from "../hooks/useSessionSocket";
 import { saveSessionSnapshot } from "../api";
@@ -28,7 +28,6 @@ function extractErrorMessage(error, fallback) {
 
 const CodeEditor = () => {
   const editorRef = useRef(null);
-  const monacoRef = useRef(null);
   const providerRef = useRef(null);
   const ydocRef = useRef(null);
   const [editorReady, setEditorReady] = useState(false);
@@ -37,9 +36,13 @@ const CodeEditor = () => {
 
   const sessionId = searchParams.get("sessionId");
   const inviteCode = searchParams.get("inviteCode");
+  const languageParam = searchParams.get("language");
+  const language =
+    languageParam && languageParam in LANGUAGE_VERSIONS
+      ? languageParam
+      : "javascript";
 
-  const [language, setLanguage] = useState("javascript");
-  const [value, setValue] = useState(CODE_SNIPPETS["javascript"]);
+  const [value, setValue] = useState("");
   const [lastResult, setLastResult] = useState(null);
   const [participantsOnline, setParticipantsOnline] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,7 +52,7 @@ const CodeEditor = () => {
     process.env.NEXT_PUBLIC_YJS_WS_URL ||
     "ws://localhost:3002/ws/yjs";
 
-  const { isConnected, emitLanguageChanged } = useSessionSocket({
+  const { isConnected } = useSessionSocket({
     token,
     sessionId,
     onExecutionResult: (payload) => {
@@ -60,16 +63,10 @@ const CodeEditor = () => {
         setParticipantsOnline(payload.participantsOnline);
       }
     },
-    onLanguageChanged: (payload) => {
-      if (payload.language && payload.language !== language) {
-        setLanguage(payload.language);
-      }
-    },
   });
 
-  async function handleEditorDidMount(editor, monaco) {
+  async function handleEditorDidMount(editor) {
     editorRef.current = editor;
-    monacoRef.current = monaco;
     setEditorReady(true);
   }
 
@@ -122,24 +119,6 @@ const CodeEditor = () => {
     };
   }, [editorReady, sessionId, token, user?.email, yjsWsBase]);
 
-  useEffect(() => {
-    if (editorRef.current && monacoRef.current) {
-      const model = editorRef.current.getModel();
-      if (model) {
-        monacoRef.current.editor.setModelLanguage(model, language);
-      }
-    }
-  }, [language]);
-
-  const onSelect = (newLanguage) => {
-    setLanguage(newLanguage);
-    setValue(CODE_SNIPPETS[newLanguage]);
-
-    if (sessionId) {
-      emitLanguageChanged(newLanguage);
-    }
-  };
-
   const handleSaveSession = async () => {
     if (!token || !sessionId) {
       setSaveMessage("No hay sesion activa para guardar.");
@@ -187,7 +166,7 @@ const CodeEditor = () => {
       ) : null}
       <HStack spacing={4} align="flex-start">
         <Box w="50%">
-          <LanguageSelector language={language} onSelect={onSelect} />
+          <LanguageSelector language={language} />
           <Editor
             height="75vh"
             language={language}

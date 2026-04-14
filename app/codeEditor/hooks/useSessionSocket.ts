@@ -11,12 +11,6 @@ type PresencePayload = {
   participantsOnline?: number;
 };
 
-type LanguagePayload = {
-  sessionId: string;
-  language: string;
-  changedBy: string;
-};
-
 type ExecutionPayload = {
   sessionId: string;
   runBy: string;
@@ -36,7 +30,6 @@ interface UseSessionSocketOptions {
   sessionId: string | null;
   onExecutionResult?: (payload: ExecutionPayload) => void;
   onPresence?: (payload: PresencePayload) => void;
-  onLanguageChanged?: (payload: LanguagePayload) => void;
 }
 
 export function useSessionSocket({
@@ -44,13 +37,11 @@ export function useSessionSocket({
   sessionId,
   onExecutionResult,
   onPresence,
-  onLanguageChanged,
 }: UseSessionSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const executionRef = useRef(onExecutionResult);
   const presenceRef = useRef(onPresence);
-  const languageRef = useRef(onLanguageChanged);
 
   useEffect(() => {
     executionRef.current = onExecutionResult;
@@ -59,10 +50,6 @@ export function useSessionSocket({
   useEffect(() => {
     presenceRef.current = onPresence;
   }, [onPresence]);
-
-  useEffect(() => {
-    languageRef.current = onLanguageChanged;
-  }, [onLanguageChanged]);
 
   const socketBaseUrl = useMemo(() => {
     const apiUrl =
@@ -97,10 +84,6 @@ export function useSessionSocket({
       presenceRef.current?.(payload);
     });
 
-    socket.on("session.language.changed", (payload: LanguagePayload) => {
-      languageRef.current?.(payload);
-    });
-
     socket.on("execution.result", (payload: ExecutionPayload) => {
       executionRef.current?.(payload);
     });
@@ -116,19 +99,7 @@ export function useSessionSocket({
     socketBaseUrl,
   ]);
 
-  const emitLanguageChanged = (language: string) => {
-    if (!socketRef.current || !sessionId) {
-      return;
-    }
-
-    socketRef.current.emit("session.language.changed", {
-      sessionId,
-      language,
-    });
-  };
-
   return {
     isConnected,
-    emitLanguageChanged,
   };
 }
