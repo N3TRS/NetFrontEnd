@@ -5,15 +5,55 @@ import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useState } from "react";
 import SelectProject from "./_components/SelectProject";
 import type { GithubRepo } from "./_types/github-repo";
-import { useRouter } from "next/navigation"; 
+import { useSessionActions } from "./_hooks/useSessionActions";
+import CreateSessionModal from "./_components/CreateSessionModal";
+import JoinSessionModal from "./_components/JoinSessionModal";
 
 export default function Dashboard() {
   const { token } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
-  const router = useRouter();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+
+  const {
+    sessionName,
+    setSessionName,
+    language,
+    setLanguage,
+    inviteCode,
+    setInviteCode,
+    isCreating,
+    isJoining,
+    createError,
+    joinError,
+    canCreate,
+    canJoin,
+    handleCreateSession,
+    handleJoinSession,
+    resetCreateState,
+    resetJoinState,
+  } = useSessionActions();
 
   const handleRepoSelected = (repo: GithubRepo) => {
     console.log("Repo seleccionado:", repo.clone_url);
+  };
+
+  const openCreateModal = () => {
+    resetCreateState();
+    setCreateOpen(true);
+  };
+
+  const openJoinModal = () => {
+    resetJoinState();
+    setJoinOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setCreateOpen(false);
+  };
+
+  const closeJoinModal = () => {
+    setJoinOpen(false);
   };
 
   return (
@@ -26,8 +66,21 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <FolderOpen className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-bold">Sesiones</h2>
-            <button onClick={() => router.push("/codeEditor")} className="cursor-pointer">
-              Ver sesiones
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/85 transition-colors"
+            >
+              Crear sesion
+            </button>
+            <button
+              type="button"
+              onClick={openJoinModal}
+              className="cursor-pointer rounded-md border border-purple-400/40 bg-purple-500/10 px-4 py-2 text-sm font-semibold text-purple-200 hover:bg-purple-500/20 transition-colors"
+            >
+              Unirse a sesion
             </button>
           </div>
         </div>
@@ -47,6 +100,30 @@ export default function Dashboard() {
         onClose={() => setConfigOpen(false)}
         token={token}
         onRepoSelected={handleRepoSelected}
+      />
+
+      <CreateSessionModal
+        open={createOpen}
+        sessionName={sessionName}
+        language={language}
+        isCreating={isCreating}
+        error={createError}
+        canCreate={canCreate}
+        onChangeSessionName={setSessionName}
+        onChangeLanguage={(value) => setLanguage(value as typeof language)}
+        onClose={closeCreateModal}
+        onCreate={handleCreateSession}
+      />
+
+      <JoinSessionModal
+        open={joinOpen}
+        inviteCode={inviteCode}
+        isJoining={isJoining}
+        error={joinError}
+        canJoin={canJoin}
+        onChangeInviteCode={setInviteCode}
+        onClose={closeJoinModal}
+        onJoin={handleJoinSession}
       />
     </>
   );

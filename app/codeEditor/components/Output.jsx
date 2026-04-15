@@ -1,17 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Text, Button, Spinner } from "@chakra-ui/react";
 import { executeCode } from "../api";
 
-const Output = ({ code, language }) => {
+const Output = ({ getCode, language, token, sessionId, externalResult }) => {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!externalResult?.run) {
+      return;
+    }
+
+    const result = externalResult.run;
+
+    if (result.stderr) {
+      setError(result.stderr);
+      setOutput("");
+      return;
+    }
+
+    setError("");
+    setOutput(result.stdout || result.output || "");
+  }, [externalResult]);
+
   const runCode = async () => {
+    const code = getCode();
+
     if (!code) {
       setError("Please write some code to execute");
+      return;
+    }
+
+    if (!token || !sessionId) {
+      setError("Missing session context. Please rejoin the session.");
       return;
     }
 
@@ -20,9 +44,8 @@ const Output = ({ code, language }) => {
     setError("");
 
     try {
-      const { run: result } = await executeCode(language, code);
+      const { run: result } = await executeCode(token, sessionId, language, code);
 
-      // Verificar si hay errores en stderr
       if (result.stderr) {
         setError(result.stderr);
       } else {
@@ -48,7 +71,7 @@ const Output = ({ code, language }) => {
         <Button
           colorScheme="green"
           onClick={runCode}
-          isDisabled={isLoading}
+          isDisabled={isLoading || !token || !sessionId}
           size="md"
         >
           {isLoading ? <Spinner size="sm" mr={2} /> : null}
@@ -78,7 +101,7 @@ const Output = ({ code, language }) => {
           </Text>
         ) : (
           <Text color="gray.500">
-            Click "Run Code" to see the output here...
+            Click &quot;Run Code&quot; to see the output here...
           </Text>
         )}
       </Box>
