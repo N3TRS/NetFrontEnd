@@ -1,6 +1,9 @@
 "use client"
 
+import { io, Socket } from "socket.io-client"
+
 const ORCHESTRATOR_BASE = "/api/orchestrator"
+const ORCHESTRATOR_WS = process.env.NEXT_PUBLIC_ORCHESTRATOR_WS || "http://localhost:3001"
 
 interface SubmitBuildResponse {
   jobName: string
@@ -40,80 +43,77 @@ export const useNetOrchestrator = () => {
     callbacks: StreamLogsCallbacks
   ): (() => void) => {
     let cancelled = false
+    let socket: Socket | null = null
 
-    const run = async () => {
-      try {
-        const response = await fetch(`${ORCHESTRATOR_BASE}/logs/${jobName}`, {
-          headers: {
-            Accept: "text/event-stream",
-            "Cache-Control": "no-cache",
-          },
-        })
+    try {
+      socket = io(ORCHESTRATOR_WS, {
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+        transports: ["websocket", "polling"],
+      })
 
-        if (!response.ok || !response.body) {
-          callbacks.onError(`Failed to connect: ${response.statusText}`)
-          callbacks.onComplete(-1)
-          return
+      socket.on("connect", () => {
+        console.log("WebSocket connected, requesting logs for:", jobName)
+        socket!.emit("logs", jobName)
+      })
+
+      socket.on("logs:data", (data: string) => {
+        if (!cancelled && data && data.trim()) {
+          callbacks.onLog(data)
         }
+      })
 
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ""
-        let hasReceivedData = false
-
-        while (!cancelled) {
-          let done: boolean
-          let value: Uint8Array | undefined
-
-          try {
-            const result = await reader.read()
-            done = result.done
-            value = result.value
-          } catch {
-            // Browser throws "Error in input stream" when server closes the
-            // SSE connection — treat as normal completion if data was received
-            if (!cancelled) callbacks.onComplete(hasReceivedData ? 0 : -1)
-            return
-          }
-
-          if (done) break
-
-          hasReceivedData = true
-          buffer += decoder.decode(value, { stream: true })
-
-          const lines = buffer.split("\n")
-          buffer = lines.pop() ?? ""
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue
-            let data = line.slice(6).trim()
-            // Handle NestJS JSON-wrapped format: {"data": "..."}
-            try {
-              const parsed = JSON.parse(data)
-              if (parsed && typeof parsed.data === "string") {
-                data = parsed.data
-              }
-            } catch {
-              // plain text, use as-is
-            }
-            if (data) callbacks.onLog(data)
-          }
-        }
-
-        if (!cancelled) callbacks.onComplete(0)
-      } catch (error) {
+      socket.on("logs:complete", () => {
         if (!cancelled) {
-          callbacks.onError(
-            error instanceof Error ? error.message : "Unknown error"
-          )
+          console.log("Build completed - Ready for testing (30 min)")
+          callbacks.onComplete(0)
+        }
+      })
+
+      socket.on("logs:error", (error: any) => {
+        if (!cancelled) {
+          const errorMsg = typeof error === "string" ? error : error?.message || "Unknown error"
+          console.error("WebSocket error:", errorMsg)
+          callbacks.onError(errorMsg)
           callbacks.onComplete(-1)
         }
+        if (socket) {
+          socket.disconnect()
+        }
+      })
+
+      socket.on("disconnect", () => {
+        console.log("WebSocket disconnected")
+        if (!cancelled) {
+          if (socket!.connected === false && !cancelled) {
+            callbacks.onError("WebSocket connection lost")
+            callbacks.onComplete(-1)
+          }
+        }
+      })
+
+      socket.on("connect_error", (error: any) => {
+        if (!cancelled) {
+          console.error("WebSocket connection error:", error.message)
+          callbacks.onError(`Connection error: ${error.message}`)
+          callbacks.onComplete(-1)
+        }
+      })
+    } catch (error) {
+      if (!cancelled) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error"
+        callbacks.onError(errorMsg)
+        callbacks.onComplete(-1)
       }
     }
 
-    run()
     return () => {
       cancelled = true
+      if (socket) {
+        socket.disconnect()
+      }
     }
   }
 

@@ -73,7 +73,7 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
     lineHeight: 1.4,
     cursorBlink: true,
     cursorStyle: "block" as const,
-    scrollback: 1000,
+    scrollback: 10000,
   }), [resolvedTheme])
 
   const fitAddon = useMemo(() => new FitAddon(), [])

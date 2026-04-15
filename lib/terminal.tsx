@@ -32,6 +32,7 @@ export default function TerminalRunning() {
     exitCode: undefined,
     errorMessage: null,
   })
+  const [testingTimeRemaining, setTestingTimeRemaining] = useState<number | null>(null)
 
   const cancelStreamRef = useRef<(() => void) | null>(null)
 
@@ -84,6 +85,10 @@ export default function TerminalRunning() {
             exitCode,
           }))
           cancelStreamRef.current = null
+
+          if (exitCode === 0 || exitCode === undefined) {
+            setTestingTimeRemaining(1800)  // 30 minutos en segundos
+          }
         },
       })
 
@@ -123,8 +128,35 @@ export default function TerminalRunning() {
   }, [])
 
   useEffect(() => {
+    if (testingTimeRemaining === null) return
+
+    if (testingTimeRemaining === 0) {
+      handleClear()
+      return
+    }
+
+    const timer = setInterval(() => {
+      setTestingTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timer)
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [testingTimeRemaining, handleClear])
+
+  useEffect(() => {
     if (terminalState.errorMessage) {
       console.error("Terminal Error:", terminalState.errorMessage)
+
+      if (terminalState.errorMessage.includes('WebSocket') ||
+        terminalState.errorMessage.includes('disconnect') ||
+        terminalState.errorMessage.includes('Connection')) {
+        console.warn("WebSocket connection issue - attempting automatic recovery")
+      }
     }
   }, [terminalState.errorMessage])
 
@@ -148,6 +180,22 @@ export default function TerminalRunning() {
         logCount={terminalState.logs.length}
         exitCode={terminalState.exitCode}
       />
+
+      {testingTimeRemaining !== null && (
+        <div className={`px-4 py-3 rounded-lg border text-sm font-jetbrains-mono ${testingTimeRemaining > 60
+          ? 'bg-blue-900 border-blue-700 text-blue-100'
+          : testingTimeRemaining > 0
+            ? 'bg-orange-900 border-orange-700 text-orange-100'
+            : 'bg-red-900 border-red-700 text-red-100'
+          }`}>
+          <p>
+            {testingTimeRemaining > 0
+              ? `Testing environment ready - ${Math.floor(testingTimeRemaining / 60)}:${String(testingTimeRemaining % 60).padStart(2, '0')} remaining`
+              : 'Testing environment expired - cleanup in progress'
+            }
+          </p>
+        </div>
+      )}
 
       {terminalState.errorMessage && (
         <div className="fixed bottom-4 right-4 bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg max-w-sm">
