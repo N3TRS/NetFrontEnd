@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Box, Text, Button, Spinner } from "@chakra-ui/react";
 import { executeCode } from "../api";
 
-const Output = ({ code, language, token, sessionId, externalResult }) => {
+const Output = ({ getCode, language, token, sessionId, externalResult }) => {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +27,8 @@ const Output = ({ code, language, token, sessionId, externalResult }) => {
   }, [externalResult]);
 
   const runCode = async () => {
+    const code = getCode();
+
     if (!code) {
       setError("Please write some code to execute");
       return;

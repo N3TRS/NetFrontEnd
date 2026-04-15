@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import * as Y from "yjs";
-import { WebsocketProvider } from "y-websocket";
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { useSearchParams } from "next/navigation";
 import LanguageSelector from "./LanguageSelector";
@@ -12,6 +11,7 @@ import { LANGUAGE_VERSIONS } from "../Utils/constants";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useSessionSocket } from "../hooks/useSessionSocket";
 import { saveSessionSnapshot } from "../api";
+import { createYjsClient } from "../lib/yjsClient";
 
 function extractErrorMessage(error, fallback) {
   if (error && typeof error === "object") {
@@ -25,12 +25,10 @@ function extractErrorMessage(error, fallback) {
 
   return fallback;
 }
-//xd
-const CodeEditor = () => {
 
-  
+const CodeEditor = () => {
   const editorRef = useRef(null);
-  const providerRef = useRef(null);
+  const clientRef = useRef(null);
   const ydocRef = useRef(null);
   const [editorReady, setEditorReady] = useState(false);
   const searchParams = useSearchParams();
@@ -44,7 +42,6 @@ const CodeEditor = () => {
       ? languageParam
       : "javascript";
 
-  const [value, setValue] = useState("");
   const [lastResult, setLastResult] = useState(null);
   const [participantsOnline, setParticipantsOnline] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,7 +64,7 @@ const CodeEditor = () => {
     },
   });
 
-  async function handleEditorDidMount(editor) {
+  function handleEditorDidMount(editor) {
     editorRef.current = editor;
     setEditorReady(true);
   }
@@ -87,24 +84,25 @@ const CodeEditor = () => {
       }
 
       const ydoc = new Y.Doc();
-      const provider = new WebsocketProvider(yjsWsBase, sessionId, ydoc, {
-        params: {
-          token,
-        },
+      const client = createYjsClient({
+        wsUrl: yjsWsBase,
+        sessionId,
+        token,
+        ydoc,
       });
-      const type = ydoc.getText("monaco");
+      const type = ydoc.getText("content");
 
       ydocRef.current = ydoc;
-      providerRef.current = provider;
+      clientRef.current = client;
 
       new MonacoBinding(
         type,
         editorRef.current.getModel(),
         new Set([editorRef.current]),
-        provider.awareness
+        client.awareness
       );
 
-      provider.awareness.setLocalStateField("user", {
+      client.awareness.setLocalStateField("user", {
         name: user?.email || "anonymous",
         color: "#22d3ee",
       });
@@ -114,12 +112,15 @@ const CodeEditor = () => {
 
     return () => {
       cancelled = true;
-      providerRef.current?.destroy();
+      clientRef.current?.close();
       ydocRef.current?.destroy();
-      providerRef.current = null;
+      clientRef.current = null;
       ydocRef.current = null;
     };
-  }, [editorReady, sessionId, token, user?.email, yjsWsBase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorReady, sessionId, token, yjsWsBase]);
+
+  const getCode = () => editorRef.current?.getValue() ?? "";
 
   const handleSaveSession = async () => {
     if (!token || !sessionId) {
@@ -131,7 +132,7 @@ const CodeEditor = () => {
       setIsSaving(true);
       setSaveMessage("");
 
-      await saveSessionSnapshot(token, sessionId, language, value || "");
+      await saveSessionSnapshot(token, sessionId, language, getCode());
       setSaveMessage("Sesion guardada correctamente.");
     } catch (error) {
       setSaveMessage(extractErrorMessage(error, "No se pudo guardar la sesion."));
@@ -172,14 +173,13 @@ const CodeEditor = () => {
           <Editor
             height="75vh"
             language={language}
-            value={value}
+            defaultValue=""
             theme="vs-dark"
             onMount={handleEditorDidMount}
-            onChange={(newValue) => setValue(newValue)}
           />
         </Box>
         <Output
-          code={value}
+          getCode={getCode}
           language={language}
           token={token}
           sessionId={sessionId}
