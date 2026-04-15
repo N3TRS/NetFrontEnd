@@ -23,7 +23,7 @@ export function useGithubRepos(token: string | null): UseGithubReposResult {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_APIGATEWAY}/users/github/repos`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/users/github/repos`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

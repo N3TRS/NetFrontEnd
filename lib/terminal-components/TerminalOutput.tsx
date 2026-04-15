@@ -1,45 +1,13 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useRef, useMemo } from "react"
 import { useXTerm } from "react-xtermjs"
 import { FitAddon } from "@xterm/addon-fit"
+import { useTheme } from "@/lib/theme/useTheme"
 import "@xterm/xterm/css/xterm.css"
 
 interface TerminalOutputProps {
   logs: string[]
-}
-
-const terminalOptions = {
-  allowTransparency: true,
-  theme: {
-    background: "rgba(26, 31, 46, 0.95)",
-    foreground: "#e6edf3",
-    cursor: "#FF8B10",
-    cursorAccent: "#0a0e14",
-    selectionBackground: "#5A189A55",
-    black: "#0a0e14",
-    red: "#ff5555",
-    green: "#50fa7b",
-    yellow: "#f1fa8c",
-    blue: "#7b93f5",
-    magenta: "#FF8B10",
-    cyan: "#8be9fd",
-    white: "#c9d1d9",
-    brightBlack: "#4d4d4d",
-    brightRed: "#ff6e67",
-    brightGreen: "#5af78e",
-    brightYellow: "#f4f99d",
-    brightBlue: "#caa9fa",
-    brightMagenta: "#ff92d0",
-    brightCyan: "#9aedfe",
-    brightWhite: "#e6edf3",
-  },
-  fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
-  fontSize: 13,
-  lineHeight: 1.4,
-  cursorBlink: true,
-  cursorStyle: "block" as const,
-  scrollback: 1000,
 }
 
 const LOG_LEVEL_COLORS: Record<string, { color: string; indicator: string }> = {
@@ -51,6 +19,39 @@ const LOG_LEVEL_COLORS: Record<string, { color: string; indicator: string }> = {
 
 const RESET_COLOR = "\x1b[0m"
 
+const getXTermColorsFromCSS = () => {
+  const root = document.documentElement
+  const computedStyle = getComputedStyle(root)
+
+  const getColor = (varName: string): string => {
+    return computedStyle.getPropertyValue(varName).trim()
+  }
+
+  return {
+    background: getColor('--xterm-background'),
+    foreground: getColor('--xterm-foreground'),
+    cursor: getColor('--xterm-cursor'),
+    cursorAccent: getColor('--xterm-cursorAccent'),
+    selectionBackground: getColor('--xterm-selectionBackground'),
+    black: getColor('--xterm-black'),
+    red: getColor('--xterm-red'),
+    green: getColor('--xterm-green'),
+    yellow: getColor('--xterm-yellow'),
+    blue: getColor('--xterm-blue'),
+    magenta: getColor('--xterm-magenta'),
+    cyan: getColor('--xterm-cyan'),
+    white: getColor('--xterm-white'),
+    brightBlack: getColor('--xterm-brightBlack'),
+    brightRed: getColor('--xterm-brightRed'),
+    brightGreen: getColor('--xterm-brightGreen'),
+    brightYellow: getColor('--xterm-brightYellow'),
+    brightBlue: getColor('--xterm-brightBlue'),
+    brightMagenta: getColor('--xterm-brightMagenta'),
+    brightCyan: getColor('--xterm-brightCyan'),
+    brightWhite: getColor('--xterm-brightWhite'),
+  }
+}
+
 const colorizeLog = (line: string): string => {
   for (const [level, { color }] of Object.entries(LOG_LEVEL_COLORS)) {
     if (line.includes(level)) {
@@ -61,6 +62,20 @@ const colorizeLog = (line: string): string => {
 }
 
 export default function TerminalOutput({ logs }: TerminalOutputProps) {
+  const { resolvedTheme } = useTheme()
+  const writtenCountRef = useRef(0)
+
+  const terminalOptions = useMemo(() => ({
+    allowTransparency: true,
+    theme: getXTermColorsFromCSS(),
+    fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+    fontSize: 13,
+    lineHeight: 1.4,
+    cursorBlink: true,
+    cursorStyle: "block" as const,
+    scrollback: 10000,
+  }), [resolvedTheme])
+
   const fitAddon = useMemo(() => new FitAddon(), [])
   const addons = useMemo(() => [fitAddon], [fitAddon])
   const { ref, instance } = useXTerm({ options: terminalOptions, addons })
@@ -70,23 +85,50 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
 
     fitAddon.fit()
 
-    const observer = new ResizeObserver(() => fitAddon.fit())
+    const observer = new ResizeObserver(() => {
+      try {
+        fitAddon.fit()
+      } catch (e) {
+      }
+    })
+
     if (ref.current) observer.observe(ref.current)
 
     return () => observer.disconnect()
   }, [instance, fitAddon, ref])
 
   useEffect(() => {
-    if (!instance || logs.length === 0) return
-
-    const lastLog = logs[logs.length - 1]
-    const colorizedLog = colorizeLog(lastLog)
-    instance.writeln(colorizedLog)
+    if (!instance) return
+    if (logs.length === 0) {
+      writtenCountRef.current = 0
+      instance.reset()
+      return
+    }
+    const newLogs = logs.slice(writtenCountRef.current)
+    newLogs.forEach((log) => instance.writeln(colorizeLog(log)))
+    writtenCountRef.current = logs.length
   }, [logs, instance])
 
   return (
-    <div className="flex-1 min-h-0 rounded-none overflow-hidden border border-white/5">
-      <div ref={ref} style={{ height: "100%", width: "100%" }} />
+    <div
+      className="flex-1 min-h-0 rounded-none overflow-hidden border transition-theme"
+      style={{
+        borderColor: 'var(--terminal-border)',
+      }}
+      role="region"
+      aria-label="Terminal output area"
+    >
+      <div
+        ref={ref}
+        style={{
+          height: "100%",
+          width: "100%",
+          overflow: 'hidden',
+          overscrollBehavior: 'contain',
+        }}
+      />
     </div>
   )
 }
+
+

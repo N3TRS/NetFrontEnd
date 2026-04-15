@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ProjectProvider } from "./_contexts/ProjectContext";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -29,13 +30,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} antialiased`}
       >
-        <ProjectProvider>
-          <main>{children}</main>
-        </ProjectProvider>
+        <ThemeProvider>
+          <ProjectProvider>
+            <main>{children}</main>
+          </ProjectProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
