@@ -22,7 +22,7 @@ interface TerminalState {
 
 export default function TerminalRunning() {
   const { projectUrl } = useProject()
-  const { submitBuild, streamLogs, closeStream } = useNetOrchestrator()
+  const { submitBuild, streamLogs } = useNetOrchestrator()
   const [terminalState, setTerminalState] = useState<TerminalState>({
     status: "idle",
     isRunning: false,
@@ -32,9 +32,9 @@ export default function TerminalRunning() {
     exitCode: undefined,
     errorMessage: null,
   })
+  const [testingTimeRemaining, setTestingTimeRemaining] = useState<number | null>(null)
 
-  const eventSourceRef = useRef<EventSource | null>(null)
-
+  const cancelStreamRef = useRef<(() => void) | null>(null)
 
   const handleRun = useCallback(async () => {
     if (!projectUrl) {
@@ -64,38 +64,35 @@ export default function TerminalRunning() {
         jobName,
       }))
 
-      const eventSource = streamLogs(
-        jobName,
-        {
-          onLog: (line: string) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              logs: [...prev.logs, line],
-            }))
-          },
-          onError: (error: string) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              errorMessage: error,
-            }))
-          },
-          onComplete: (exitCode?: number) => {
-            setTerminalState((prev) => ({
-              ...prev,
-              status: exitCode === 0 || exitCode === undefined ? "completed" : "failed",
-              isRunning: false,
-              exitCode,
-            }))
-            if (eventSourceRef.current) {
-              closeStream(eventSourceRef.current)
-              eventSourceRef.current = null
-            }
-          },
+      const cancel = streamLogs(jobName, {
+        onLog: (line: string) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            logs: [...prev.logs, line],
+          }))
         },
-        3
-      )
+        onError: (error: string) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            errorMessage: error,
+          }))
+        },
+        onComplete: (exitCode?: number) => {
+          setTerminalState((prev) => ({
+            ...prev,
+            status: exitCode === 0 || exitCode === undefined ? "completed" : "failed",
+            isRunning: false,
+            exitCode,
+          }))
+          cancelStreamRef.current = null
 
-      eventSourceRef.current = eventSource
+          if (exitCode === 0 || exitCode === undefined) {
+            setTestingTimeRemaining(1800)  // 30 minutos en segundos
+          }
+        },
+      })
+
+      cancelStreamRef.current = cancel
     } catch (error) {
       const errorMsg =
         error instanceof Error ? error.message : "Failed to submit build"
@@ -107,14 +104,11 @@ export default function TerminalRunning() {
         errorMessage: errorMsg,
       }))
     }
-  }, [projectUrl, submitBuild, streamLogs, closeStream])
-
+  }, [projectUrl, submitBuild, streamLogs])
 
   const handleClear = useCallback(() => {
-    if (eventSourceRef.current) {
-      closeStream(eventSourceRef.current)
-      eventSourceRef.current = null
-    }
+    cancelStreamRef.current?.()
+    cancelStreamRef.current = null
 
     setTerminalState({
       status: "idle",
@@ -125,21 +119,44 @@ export default function TerminalRunning() {
       exitCode: undefined,
       errorMessage: null,
     })
-  }, [closeStream])
-
+  }, [])
 
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        closeStream(eventSourceRef.current)
-      }
+      cancelStreamRef.current?.()
     }
-  }, [closeStream])
+  }, [])
 
+  useEffect(() => {
+    if (testingTimeRemaining === null) return
+
+    if (testingTimeRemaining === 0) {
+      handleClear()
+      return
+    }
+
+    const timer = setInterval(() => {
+      setTestingTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timer)
+          return null
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [testingTimeRemaining, handleClear])
 
   useEffect(() => {
     if (terminalState.errorMessage) {
       console.error("Terminal Error:", terminalState.errorMessage)
+
+      if (terminalState.errorMessage.includes('WebSocket') ||
+        terminalState.errorMessage.includes('disconnect') ||
+        terminalState.errorMessage.includes('Connection')) {
+        console.warn("WebSocket connection issue - attempting automatic recovery")
+      }
     }
   }, [terminalState.errorMessage])
 
@@ -163,6 +180,22 @@ export default function TerminalRunning() {
         logCount={terminalState.logs.length}
         exitCode={terminalState.exitCode}
       />
+
+      {testingTimeRemaining !== null && (
+        <div className={`px-4 py-3 rounded-lg border text-sm font-jetbrains-mono ${testingTimeRemaining > 60
+          ? 'bg-blue-900 border-blue-700 text-blue-100'
+          : testingTimeRemaining > 0
+            ? 'bg-orange-900 border-orange-700 text-orange-100'
+            : 'bg-red-900 border-red-700 text-red-100'
+          }`}>
+          <p>
+            {testingTimeRemaining > 0
+              ? `Testing environment ready - ${Math.floor(testingTimeRemaining / 60)}:${String(testingTimeRemaining % 60).padStart(2, '0')} remaining`
+              : 'Testing environment expired - cleanup in progress'
+            }
+          </p>
+        </div>
+      )}
 
       {terminalState.errorMessage && (
         <div className="fixed bottom-4 right-4 bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg max-w-sm">

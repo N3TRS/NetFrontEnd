@@ -1,6 +1,9 @@
 "use client"
 
-const ORCHESTRATOR_URL = "http://localhost:3001"
+import { io, Socket } from "socket.io-client"
+
+const ORCHESTRATOR_BASE = "/api/orchestrator"
+const ORCHESTRATOR_WS = process.env.NEXT_PUBLIC_ORCHESTRATOR_WS || "http://localhost:3001"
 
 interface SubmitBuildResponse {
   jobName: string
@@ -16,7 +19,7 @@ interface StreamLogsCallbacks {
 export const useNetOrchestrator = () => {
   const submitBuild = async (repoUrl: string): Promise<string> => {
     try {
-      const response = await fetch(`${ORCHESTRATOR_URL}/orchestrator/run`, {
+      const response = await fetch(`${ORCHESTRATOR_BASE}/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -37,67 +40,85 @@ export const useNetOrchestrator = () => {
 
   const streamLogs = (
     jobName: string,
-    callbacks: StreamLogsCallbacks,
-    maxRetries: number = 3
-  ): EventSource | null => {
-    let retries = 0
-    let eventSource: EventSource | null = null
+    callbacks: StreamLogsCallbacks
+  ): (() => void) => {
+    let cancelled = false
+    let socket: Socket | null = null
 
-    const connect = (): void => {
-      try {
-        eventSource = new EventSource(
-          `${ORCHESTRATOR_URL}/orchestrator/logs/${jobName}`
-        )
+    try {
+      socket = io(ORCHESTRATOR_WS, {
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+        transports: ["websocket", "polling"],
+      })
 
-        eventSource.onmessage = (event: MessageEvent) => {
-          const logLine = event.data
-          callbacks.onLog(logLine)
+      socket.on("connect", () => {
+        console.log("WebSocket connected, requesting logs for:", jobName)
+        socket!.emit("logs", jobName)
+      })
+
+      socket.on("logs:data", (data: string) => {
+        if (!cancelled && data && data.trim()) {
+          callbacks.onLog(data)
         }
+      })
 
-        eventSource.onerror = () => {
-          eventSource?.close()
-          eventSource = null
+      socket.on("logs:complete", () => {
+        if (!cancelled) {
+          console.log("Build completed - Ready for testing (30 min)")
+          callbacks.onComplete(0)
+        }
+      })
 
-          if (retries < maxRetries) {
-            retries++
-            setTimeout(() => {
-              connect()
-            }, 2000)
-          } else {
-            callbacks.onError(
-              `Connection failed after ${maxRetries} attempts`
-            )
+      socket.on("logs:error", (error: any) => {
+        if (!cancelled) {
+          const errorMsg = typeof error === "string" ? error : error?.message || "Unknown error"
+          console.error("WebSocket error:", errorMsg)
+          callbacks.onError(errorMsg)
+          callbacks.onComplete(-1)
+        }
+        if (socket) {
+          socket.disconnect()
+        }
+      })
+
+      socket.on("disconnect", () => {
+        console.log("WebSocket disconnected")
+        if (!cancelled) {
+          if (socket!.connected === false && !cancelled) {
+            callbacks.onError("WebSocket connection lost")
             callbacks.onComplete(-1)
           }
         }
-      } catch (error) {
-        if (retries < maxRetries) {
-          retries++
-          setTimeout(() => {
-            connect()
-          }, 2000)
-        } else {
-          callbacks.onError(
-            `Failed to connect: ${error instanceof Error ? error.message : "Unknown error"}`
-          )
+      })
+
+      socket.on("connect_error", (error: any) => {
+        if (!cancelled) {
+          console.error("WebSocket connection error:", error.message)
+          callbacks.onError(`Connection error: ${error.message}`)
           callbacks.onComplete(-1)
         }
+      })
+    } catch (error) {
+      if (!cancelled) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error"
+        callbacks.onError(errorMsg)
+        callbacks.onComplete(-1)
       }
     }
 
-    connect()
-    return eventSource
-  }
-
-  const closeStream = (eventSource: EventSource | null): void => {
-    if (eventSource) {
-      eventSource.close()
+    return () => {
+      cancelled = true
+      if (socket) {
+        socket.disconnect()
+      }
     }
   }
 
   return {
     submitBuild,
     streamLogs,
-    closeStream,
   }
 }

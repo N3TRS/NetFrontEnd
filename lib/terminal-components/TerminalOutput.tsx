@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useRef, useMemo } from "react"
 import { useXTerm } from "react-xtermjs"
 import { FitAddon } from "@xterm/addon-fit"
 import { useTheme } from "@/lib/theme/useTheme"
@@ -63,6 +63,7 @@ const colorizeLog = (line: string): string => {
 
 export default function TerminalOutput({ logs }: TerminalOutputProps) {
   const { resolvedTheme } = useTheme()
+  const writtenCountRef = useRef(0)
 
   const terminalOptions = useMemo(() => ({
     allowTransparency: true,
@@ -72,7 +73,7 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
     lineHeight: 1.4,
     cursorBlink: true,
     cursorStyle: "block" as const,
-    scrollback: 1000,
+    scrollback: 10000,
   }), [resolvedTheme])
 
   const fitAddon = useMemo(() => new FitAddon(), [])
@@ -97,11 +98,15 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
   }, [instance, fitAddon, ref])
 
   useEffect(() => {
-    if (!instance || logs.length === 0) return
-
-    const lastLog = logs[logs.length - 1]
-    const colorizedLog = colorizeLog(lastLog)
-    instance.writeln(colorizedLog)
+    if (!instance) return
+    if (logs.length === 0) {
+      writtenCountRef.current = 0
+      instance.reset()
+      return
+    }
+    const newLogs = logs.slice(writtenCountRef.current)
+    newLogs.forEach((log) => instance.writeln(colorizeLog(log)))
+    writtenCountRef.current = logs.length
   }, [logs, instance])
 
   return (
