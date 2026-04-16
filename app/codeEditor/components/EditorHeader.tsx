@@ -1,6 +1,6 @@
 "use client";
 
-import { Code2, Play, Save, UserPlus } from "lucide-react";
+import { Play, Save, Terminal, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageBadge } from "./LanguageBadge";
 import {
@@ -35,11 +35,11 @@ export function EditorHeader({
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-secondary px-4">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="grid size-7 place-items-center rounded-md bg-accent">
-            <Code2 className="size-4 text-white" aria-hidden />
+          <div className="rounded-md bg-primary p-1 text-primary-foreground">
+            <Terminal className="size-4" strokeWidth={2.5} aria-hidden />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-white">
-            CodeSync
+          <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-base font-bold tracking-tight text-transparent">
+            OmniCode
           </span>
         </div>
 
