@@ -14,6 +14,48 @@ function authHeaders(token: string) {
   };
 }
 
+export interface SessionSummary {
+  id: string;
+  name: string;
+  language: string;
+  inviteCode: string;
+  ownerEmail: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const listSessions = async (token: string): Promise<{ sessions: SessionSummary[] }> => {
+  const response = await API_URL.get('/sessions', {
+    headers: authHeaders(token),
+  });
+
+  return response.data;
+};
+
+export const renameSession = async (
+  token: string,
+  sessionId: string,
+  name: string,
+): Promise<{ session: SessionSummary }> => {
+  const response = await API_URL.patch(
+    `/sessions/${sessionId}/rename`,
+    { name },
+    { headers: authHeaders(token) },
+  );
+  return response.data;
+};
+
+export const deleteSession = async (
+  token: string,
+  sessionId: string,
+): Promise<{ session: SessionSummary }> => {
+  const response = await API_URL.delete(`/sessions/${sessionId}`, {
+    headers: authHeaders(token),
+  });
+  return response.data;
+};
+
 export const createSession = async (
   token: string,
   name: string,
