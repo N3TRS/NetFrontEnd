@@ -11,7 +11,7 @@ export function forgotPasswordHook() {
 
     setIsPending(true);
     try {
-      await fetch(`http://localhost:3000/auth/forgot-password`, {
+      await fetch(`${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
