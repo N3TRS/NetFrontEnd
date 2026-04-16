@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
-import { listSessions, type SessionSummary } from "@/app/codeEditor/api";
+import { HttpError, listSessions, type SessionSummary } from "@/app/codeEditor/api";
 
 interface UseMySessionsResult {
   sessions: SessionSummary[] | null;
@@ -40,8 +39,8 @@ export function useMySessions(token: string | null): UseMySessionsResult {
       .catch((err) => {
         if (cancelled) return;
         const message =
-          axios.isAxiosError(err) && err.response?.data?.message
-            ? String(err.response.data.message)
+          err instanceof HttpError && err.body?.message
+            ? String(err.body.message)
             : err instanceof Error
               ? err.message
               : "No se pudieron cargar las sesiones.";

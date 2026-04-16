@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { createSession, joinSession } from "@/app/codeEditor/api";
+import { createSession, HttpError, joinSession } from "@/app/codeEditor/api";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { LANGUAGE_VERSIONS } from "@/app/codeEditor/Utils/constants";
 
@@ -56,7 +55,7 @@ export function useSessionActions() {
       );
     } catch (error) {
       const message =
-        axios.isAxiosError(error) && error.response?.status === 409
+        error instanceof HttpError && error.status === 409
           ? "Ya existe una sesión con este nombre, intenta otro"
           : error instanceof Error
             ? error.message

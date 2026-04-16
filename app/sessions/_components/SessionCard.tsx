@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import axios from "axios";
 import {
   ArrowRight,
   Check,
@@ -17,6 +16,7 @@ import {
 import {
   renameSession,
   deleteSession,
+  HttpError,
   type SessionSummary,
 } from "@/app/codeEditor/api";
 
@@ -35,11 +35,11 @@ function formatDateTime(value: string): string {
 }
 
 function extractErrorMessage(err: unknown): string {
-  if (axios.isAxiosError(err) && err.response?.status === 409) {
+  if (err instanceof HttpError && err.status === 409) {
     return "Ya existe una sesión con este nombre, intenta otro";
   }
-  if (axios.isAxiosError(err) && err.response?.data?.message) {
-    return String(err.response.data.message);
+  if (err instanceof HttpError && typeof err.body?.message === "string") {
+    return err.body.message;
   }
   return err instanceof Error ? err.message : "Ocurrio un error.";
 }
