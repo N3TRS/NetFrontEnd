@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { saveSessionSnapshot } from "./api";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
@@ -161,24 +162,33 @@ const App = () => {
         <div className="flex flex-1 flex-col overflow-hidden">
           <EditorTabs filename={filename} />
 
-          <div className="flex-1 overflow-hidden">
-            <MonacoCanvas
-              ref={canvasRef}
-              sessionId={sessionId}
-              token={token}
-              userEmail={user?.email ?? null}
-              language={language}
-            />
-          </div>
+          <Group orientation="vertical" className="flex-1">
+            <Panel defaultSize={70} minSize={5}>
+              <MonacoCanvas
+                ref={canvasRef}
+                sessionId={sessionId}
+                token={token}
+                userEmail={user?.email ?? null}
+                language={language}
+              />
+            </Panel>
 
-          {terminalOpen ? (
-            <EditorTerminal
-              command={command}
-              lines={lines}
-              onCollapse={() => setTerminalOpen(false)}
-              onClose={() => setTerminalOpen(false)}
-            />
-          ) : null}
+            {terminalOpen ? (
+              <>
+                <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
+                  <span className="absolute inset-x-0 -top-1 h-[9px]" />
+                </Separator>
+                <Panel defaultSize={30} minSize={5}>
+                  <EditorTerminal
+                    command={command}
+                    lines={lines}
+                    onCollapse={() => setTerminalOpen(false)}
+                    onClose={() => setTerminalOpen(false)}
+                  />
+                </Panel>
+              </>
+            ) : null}
+          </Group>
         </div>
       </div>
     </div>

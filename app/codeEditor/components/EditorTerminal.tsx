@@ -26,7 +26,7 @@ export function EditorTerminal({
 
   return (
     <section
-      className="flex h-[220px] shrink-0 flex-col border-t border-white/5"
+      className="flex h-full flex-col"
       aria-label="Terminal"
     >
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/5 bg-background px-4 text-xs">
