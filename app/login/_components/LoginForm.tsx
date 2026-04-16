@@ -108,7 +108,7 @@ export default function LoginForm({
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Contraseña</Label>
             <Link
-              href="#"
+              href="/forgot-password"
               className="text-xs text-primary underline-offset-4 hover:underline"
             >
               ¿Olvidaste tu Contraseña?
