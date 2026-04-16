@@ -9,6 +9,8 @@ interface UseMySessionsResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => void;
+  updateSessionName: (id: string, name: string) => void;
+  removeSession: (id: string) => void;
 }
 
 export function useMySessions(token: string | null): UseMySessionsResult {
@@ -56,5 +58,17 @@ export function useMySessions(token: string | null): UseMySessionsResult {
     };
   }, [token, reloadKey]);
 
-  return { sessions, isLoading, error, refetch };
+  const updateSessionName = useCallback((id: string, name: string) => {
+    setSessions((prev) =>
+      prev
+        ? prev.map((s) => (s.id === id ? { ...s, name, updatedAt: new Date().toISOString() } : s))
+        : prev,
+    );
+  }, []);
+
+  const removeSession = useCallback((id: string) => {
+    setSessions((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));
+  }, []);
+
+  return { sessions, isLoading, error, refetch, updateSessionName, removeSession };
 }

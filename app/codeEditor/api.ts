@@ -33,6 +33,29 @@ export const listSessions = async (token: string): Promise<{ sessions: SessionSu
   return response.data;
 };
 
+export const renameSession = async (
+  token: string,
+  sessionId: string,
+  name: string,
+): Promise<{ session: SessionSummary }> => {
+  const response = await API_URL.patch(
+    `/sessions/${sessionId}/rename`,
+    { name },
+    { headers: authHeaders(token) },
+  );
+  return response.data;
+};
+
+export const deleteSession = async (
+  token: string,
+  sessionId: string,
+): Promise<{ session: SessionSummary }> => {
+  const response = await API_URL.delete(`/sessions/${sessionId}`, {
+    headers: authHeaders(token),
+  });
+  return response.data;
+};
+
 export const createSession = async (
   token: string,
   name: string,

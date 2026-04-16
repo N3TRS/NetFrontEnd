@@ -7,8 +7,9 @@ import { useMySessions } from "./_hooks/useMySessions";
 import SessionCard from "./_components/SessionCard";
 
 export default function SessionsListPage() {
-  const { token } = useAuth();
-  const { sessions, isLoading, error, refetch } = useMySessions(token);
+  const { token, user } = useAuth();
+  const { sessions, isLoading, error, refetch, updateSessionName, removeSession } =
+    useMySessions(token);
 
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -54,7 +55,14 @@ export default function SessionsListPage() {
       {!isLoading && !error && sessions && sessions.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sessions.map((session) => (
-            <SessionCard key={session.id} session={session} />
+            <SessionCard
+              key={session.id}
+              session={session}
+              currentUserEmail={user?.email}
+              token={token}
+              onRenamed={updateSessionName}
+              onDeleted={removeSession}
+            />
           ))}
         </div>
       )}
