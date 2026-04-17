@@ -69,7 +69,7 @@ export default function SessionCard({
   const isOwner =
     !!currentUserEmail && session.ownerEmail === currentUserEmail;
 
-  const continueHref = `/codeEditor?sessionId=${encodeURIComponent(session.id)}&language=${encodeURIComponent(session.language)}&inviteCode=${encodeURIComponent(session.inviteCode)}`;
+  const continueHref = `/codeEditor?sessionId=${encodeURIComponent(session.id)}&language=${encodeURIComponent(session.language)}&inviteCode=${encodeURIComponent(session.inviteCode)}&name=${encodeURIComponent(session.name)}`;
 
   const startRenaming = () => {
     setNameDraft(session.name);

@@ -50,8 +50,9 @@ export function useSessionActions() {
         throw new Error("Session was created but no sessionId was returned");
       }
 
+      const createdName = (data?.session?.name as string | undefined) || sessionName.trim();
       router.push(
-        `/codeEditor?sessionId=${sessionId}&language=${createdLanguage}${createdInviteCode ? `&inviteCode=${createdInviteCode}` : ""}`,
+        `/codeEditor?sessionId=${sessionId}&language=${createdLanguage}&name=${encodeURIComponent(createdName)}${createdInviteCode ? `&inviteCode=${createdInviteCode}` : ""}`,
       );
     } catch (error) {
       const message =
@@ -86,8 +87,9 @@ export function useSessionActions() {
         throw new Error("No se encontro la sesion para ese codigo");
       }
 
+      const joinedName = (data?.session?.name as string | undefined) || normalizedCode;
       router.push(
-        `/codeEditor?sessionId=${sessionId}&inviteCode=${normalizedInviteCode}&language=${joinedLanguage}`,
+        `/codeEditor?sessionId=${sessionId}&inviteCode=${normalizedInviteCode}&language=${joinedLanguage}&name=${encodeURIComponent(joinedName)}`,
       );
     } catch (error) {
       const message =
