@@ -84,7 +84,10 @@ const App = () => {
   useSessionSocket({
     token,
     sessionId,
-    onExecutionResult: (payload) => setExternalResult(payload),
+    onExecutionResult: (payload) => {
+      if (user?.email && payload.runBy === user.email) return;
+      setExternalResult(payload);
+    },
     onPresence: (payload) => {
       if (Array.isArray(payload.members)) {
         setParticipants(payload.members.map((email) => ({ email })));

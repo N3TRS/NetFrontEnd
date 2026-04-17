@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { executeCode } from "../api";
 import { LANGUAGE_VERSIONS } from "../Utils/constants";
 
@@ -37,10 +37,6 @@ function timestamp(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-function signature(run: ExecutionRun): string {
-  return `${run.stdout}|${run.stderr}|${run.code}`;
-}
-
 function splitLines(text: string): string[] {
   if (!text) return [];
   return text.replace(/\n+$/, "").split("\n");
@@ -55,13 +51,8 @@ export function useCodeExecution({
 }: UseCodeExecutionArgs) {
   const [lines, setLines] = useState<TerminalLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const lastRenderedRef = useRef<string>("");
 
   const appendResult = useCallback((run: ExecutionRun) => {
-    const sig = signature(run);
-    if (lastRenderedRef.current === sig) return;
-    lastRenderedRef.current = sig;
-
     const stdoutLines = splitLines(run.stdout || run.output || "");
     const stderrLines = splitLines(run.stderr || "");
 
@@ -139,7 +130,6 @@ export function useCodeExecution({
 
   const clear = useCallback(() => {
     setLines([]);
-    lastRenderedRef.current = "";
   }, []);
 
   return { lines, isRunning, run, pushLog, clear };
