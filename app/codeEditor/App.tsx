@@ -8,6 +8,7 @@ import { saveSessionSnapshot } from "./api";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
 import { useSessionSocket } from "./hooks/useSessionSocket";
 import { useCodeExecution } from "./hooks/useCodeExecution";
+import { AIChatPanel } from "./components/AIChatPanel";
 import { EditorHeader } from "./components/EditorHeader";
 import { EditorSidebar } from "./components/EditorSidebar";
 import { EditorTabs } from "./components/EditorTabs";
@@ -78,6 +79,7 @@ const App = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
 
@@ -104,6 +106,8 @@ const App = () => {
     command,
     externalResult,
   });
+
+  const handleGetCode = useCallback(() => canvasRef.current?.getCode() ?? "", []);
 
   const handleRun = useCallback(() => {
     const code = canvasRef.current?.getCode() ?? "";
@@ -160,7 +164,16 @@ const App = () => {
         <EditorSidebar
           terminalOpen={terminalOpen}
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
+          aiPanelOpen={aiPanelOpen}
+          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
         />
+
+        {aiPanelOpen && (
+          <AIChatPanel
+            onGetCode={handleGetCode}
+            onClose={() => setAiPanelOpen(false)}
+          />
+        )}
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <EditorTabs filename={filename} />

@@ -1,12 +1,11 @@
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 
-const SESSIONS_API_BASE =
-  process.env.NEXT_PUBLIC_SESSION_API_URL || 'http://localhost:3002/v1';
+const SESSIONS_API_BASE = process.env.NEXT_PUBLIC_URL_APIGATEWAY;
 
 export class HttpError extends Error {
   constructor(
     public readonly status: number,
-    public readonly body: { message?: string; [k: string]: unknown } | null,
+    public readonly body: { message?: string;[k: string]: unknown } | null,
     message: string,
   ) {
     super(message);
@@ -131,3 +130,25 @@ export const saveSessionSnapshot = (
       code,
     },
   });
+
+
+export interface AnalyzeResponse {
+  status: 'success';
+  analysis: string;
+}
+
+export async function analyzeCode(
+  prompt: string,
+  code: string,
+): Promise<AnalyzeResponse> {
+  const res = await fetch(`${SESSIONS_API_BASE}/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, code }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Analysis failed (${res.status})${text ? `: ${text}` : ''}`);
+  }
+  return res.json() as Promise<AnalyzeResponse>;
+}
