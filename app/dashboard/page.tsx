@@ -1,5 +1,6 @@
 "use client";
 import { FolderOpen } from "lucide-react";
+import Link from "next/link";
 import EmptyState from "./_components/EmptyState";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useState } from "react";
@@ -82,6 +83,12 @@ export default function Dashboard() {
             >
               Unirse a sesion
             </button>
+            <Link
+              href="/sessions"
+              className="cursor-pointer rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/90 hover:bg-white/10 transition-colors"
+            >
+              Ver sesiones
+            </Link>
           </div>
         </div>
         <hr className="border-white/5" />

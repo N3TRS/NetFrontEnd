@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSession, joinSession } from "@/app/codeEditor/api";
+import { createSession, HttpError, joinSession } from "@/app/codeEditor/api";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { LANGUAGE_VERSIONS } from "@/app/codeEditor/Utils/constants";
 
@@ -50,14 +50,17 @@ export function useSessionActions() {
         throw new Error("Session was created but no sessionId was returned");
       }
 
+      const createdName = (data?.session?.name as string | undefined) || sessionName.trim();
       router.push(
-        `/codeEditor?sessionId=${sessionId}&language=${createdLanguage}${createdInviteCode ? `&inviteCode=${createdInviteCode}` : ""}`,
+        `/codeEditor?sessionId=${sessionId}&language=${createdLanguage}&name=${encodeURIComponent(createdName)}${createdInviteCode ? `&inviteCode=${createdInviteCode}` : ""}`,
       );
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo crear la sesion. Intenta nuevamente.";
+        error instanceof HttpError && error.status === 409
+          ? "Ya existe una sesión con este nombre, intenta otro"
+          : error instanceof Error
+            ? error.message
+            : "No se pudo crear la sesion. Intenta nuevamente.";
       setCreateError(message);
     } finally {
       setIsCreating(false);
@@ -84,8 +87,9 @@ export function useSessionActions() {
         throw new Error("No se encontro la sesion para ese codigo");
       }
 
+      const joinedName = (data?.session?.name as string | undefined) || normalizedCode;
       router.push(
-        `/codeEditor?sessionId=${sessionId}&inviteCode=${normalizedInviteCode}&language=${joinedLanguage}`,
+        `/codeEditor?sessionId=${sessionId}&inviteCode=${normalizedInviteCode}&language=${joinedLanguage}&name=${encodeURIComponent(joinedName)}`,
       );
     } catch (error) {
       const message =

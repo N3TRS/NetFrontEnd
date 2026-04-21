@@ -1,89 +1,133 @@
-import axios from 'axios';
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 
 const SESSIONS_API_BASE =
   process.env.NEXT_PUBLIC_SESSION_API_URL || 'http://localhost:3002/v1';
 
-const API_URL = axios.create({
-  baseURL: SESSIONS_API_BASE,
-});
-
-function authHeaders(token: string) {
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+export class HttpError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: { message?: string; [k: string]: unknown } | null,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'HttpError';
+  }
 }
 
-export const createSession = async (
+interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  token: string;
+  body?: unknown;
+}
+
+async function request<T>(path: string, opts: RequestOptions): Promise<T> {
+  const { method = 'GET', token, body } = opts;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${SESSIONS_API_BASE}${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  const text = await response.text();
+  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  if (!response.ok) {
+    const parsed = data as { message?: string } | null;
+    const msg =
+      (parsed && typeof parsed.message === 'string' && parsed.message) ||
+      `Request failed with status ${response.status}`;
+    throw new HttpError(response.status, parsed, msg);
+  }
+
+  return data as T;
+}
+
+export interface SessionSummary {
+  id: string;
+  name: string;
+  language: string;
+  inviteCode: string;
+  ownerEmail: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const listSessions = (
+  token: string,
+): Promise<{ sessions: SessionSummary[] }> =>
+  request('/sessions', { method: 'GET', token });
+
+export const renameSession = (
+  token: string,
+  sessionId: string,
+  name: string,
+): Promise<{ session: SessionSummary }> =>
+  request(`/sessions/${sessionId}/rename`, {
+    method: 'PATCH',
+    token,
+    body: { name },
+  });
+
+export const deleteSession = (
+  token: string,
+  sessionId: string,
+): Promise<{ session: SessionSummary }> =>
+  request(`/sessions/${sessionId}`, { method: 'DELETE', token });
+
+export const createSession = (
   token: string,
   name: string,
   language: keyof typeof LANGUAGE_VERSIONS = 'javascript',
-) => {
-  const response = await API_URL.post(
-    '/sessions',
-    {
-      name,
-      language,
-    },
-    {
-      headers: authHeaders(token),
-    },
-  );
+): Promise<{ session: SessionSummary }> =>
+  request('/sessions', {
+    method: 'POST',
+    token,
+    body: { name, language },
+  });
 
-  return response.data;
-};
+export const joinSession = (
+  token: string,
+  inviteCode: string,
+): Promise<{ session: SessionSummary }> =>
+  request('/sessions/join', {
+    method: 'POST',
+    token,
+    body: { inviteCode: inviteCode.trim().toUpperCase() },
+  });
 
-export const joinSession = async (token: string, inviteCode: string) => {
-  const response = await API_URL.post(
-    '/sessions/join',
-    {
-      inviteCode: inviteCode.trim().toUpperCase(),
-    },
-    {
-      headers: authHeaders(token),
-    },
-  );
-
-  return response.data;
-};
-
-export const executeCode = async (
+export const executeCode = (
   token: string,
   sessionId: string,
   language: keyof typeof LANGUAGE_VERSIONS,
   code: string,
-) => {
-  const response = await API_URL.post(
-    '/executions/run',
-    {
+) =>
+  request('/executions/run', {
+    method: 'POST',
+    token,
+    body: {
       sessionId,
       language: PISTON_LANGUAGE_MAP[language],
       code,
     },
-    {
-      headers: authHeaders(token),
-    },
-  );
+  });
 
-  return response.data;
-};
-
-export const saveSessionSnapshot = async (
+export const saveSessionSnapshot = (
   token: string,
   sessionId: string,
   language: keyof typeof LANGUAGE_VERSIONS,
   code: string,
-) => {
-  const response = await API_URL.post(
-    `/sessions/${sessionId}/snapshots`,
-    {
+) =>
+  request(`/sessions/${sessionId}/snapshots`, {
+    method: 'POST',
+    token,
+    body: {
       language: PISTON_LANGUAGE_MAP[language],
       code,
     },
-    {
-      headers: authHeaders(token),
-    },
-  );
-
-  return response.data;
-};
+  });
