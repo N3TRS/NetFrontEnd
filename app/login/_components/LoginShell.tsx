@@ -6,18 +6,6 @@ import { Terminal } from "lucide-react";
 import AuthCharacters from "./AuthCharacters";
 import LoginForm from "./LoginForm";
 
-/**
- * LoginShell — Client Component.
- *
- * Owns the shared interaction state that bridges the form (right panel)
- * and the animated characters (left panel):
- *  - isTyping       : user is focused on the email input
- *  - isPasswordVisible : user toggled password visibility
- *  - hasPassword    : password field is non-empty
- *
- * This is the only place where state needs to cross the left/right boundary;
- * both children are pure "display" components that accept props.
- */
 export default function LoginShell() {
   const [isTyping, setIsTyping] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);

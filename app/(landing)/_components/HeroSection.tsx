@@ -1,7 +1,7 @@
-import { Play } from "lucide-react";
+import { Play, MonitorPlay } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EditorWindow from "./EditorWindow";
-
+import Link from "next/link";
 /**
  * Landing hero — badge, headline, description, CTAs, and the editor mockup.
  * Server component: no client state required.
@@ -20,7 +20,7 @@ export default function HeroSection() {
       <h1 className="mb-6 max-w-4xl text-5xl font-black leading-tight tracking-tighter md:text-7xl">
         El futuro de la{" "}
         <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
-          Programacion Colaborativa
+          Programación Colaborativa
         </span>
       </h1>
 
@@ -33,12 +33,13 @@ export default function HeroSection() {
       <div className="mb-20 flex flex-col gap-4 sm:flex-row">
         <Button className="glow-orange cursor-pointer flex h-14 min-w-45 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-lg font-bold text-primary-foreground hover:brightness-110 transition-all border-0">
           <Play className="h-5 w-5 fill-current" />
-          Start Coding
+          <Link href="/login">Tu Código Empieza Aquí</Link>
         </Button>
         <Button
           variant="outline"
           className="flex cursor-pointer h-14 min-w-45 items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-8 text-lg font-bold backdrop-blur-sm hover:bg-white/10 transition-all"
         >
+          <MonitorPlay className="h-5 w-5 fill-current" />
           Demo
         </Button>
       </div>

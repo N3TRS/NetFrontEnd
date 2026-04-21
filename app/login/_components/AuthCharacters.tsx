@@ -20,10 +20,6 @@ interface EyeBallProps {
   forceLookY?: number;
 }
 
-/**
- * Self-contained eye that tracks the cursor via its own ref.
- * When forceLookX/Y are provided the pupil snaps to that position instead.
- */
 function EyeBall({
   size = 20,
   pupilSize = 8,
@@ -91,8 +87,6 @@ function EyeBall({
   );
 }
 
-
-/** Schedules a 150 ms blink at a random interval between 3 and 7 seconds. */
 function useBlink(initialDelay = 0): boolean {
   const [isBlinking, setIsBlinking] = useState(false);
 
@@ -122,17 +116,6 @@ function useBlink(initialDelay = 0): boolean {
   return isBlinking;
 }
 
-
-/**
- * AuthCharacters — Client Component.
- *
- * Orange sphere + Purple cube with:
- *  - Per-eye cursor tracking (EyeBall component)
- *  - Randomised, offset blinking (useBlink hook)
- *  - Body lean based on mouse X position
- *  - "Look at each other" reaction when user starts typing
- *  - Purple hides/peeks when password field has content and visibility toggled
- */
 export default function AuthCharacters({
   isTyping = false,
   isPasswordVisible = false,
@@ -146,9 +129,8 @@ export default function AuthCharacters({
   const [purpleSkew, setPurpleSkew] = useState(0);
 
   const orangeBlinking = useBlink(0);
-  const purpleBlinking = useBlink(1600); // offset so they never blink together
+  const purpleBlinking = useBlink(1600); 
 
-  // Track mouse X for body lean — compute skew inside the effect to avoid reading refs during render
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const computeSkew = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -164,8 +146,6 @@ export default function AuthCharacters({
     return () => window.removeEventListener("mousemove", handler);
   }, []);
 
-  // React to typing: briefly look at each other then resume tracking.
-  // Both setters are deferred into setTimeout so no setState runs synchronously in the effect body.
   useEffect(() => {
     if (!isTyping) return;
     const t1 = setTimeout(() => setIsLookingAtEachOther(true), 0);
@@ -176,8 +156,6 @@ export default function AuthCharacters({
     };
   }, [isTyping]);
 
-  // Purple peeks down at the visible password every few seconds.
-  // Guard at the top avoids synchronous setState; cleanup handles the reset.
   useEffect(() => {
     if (!hasPassword || !isPasswordVisible) return;
     let t: ReturnType<typeof setTimeout>;
@@ -200,11 +178,11 @@ export default function AuthCharacters({
     };
   }, [hasPassword, isPasswordVisible]);
 
-  // Derived state
+
   const purpleHiding = hasPassword && !isPasswordVisible;
   const purpleRevealing = hasPassword && isPasswordVisible && isPurplePeeking;
 
-  // Eye directions
+
   const orangeForce = isLookingAtEachOther ? { x: 5, y: 1 } : undefined;
   const purpleForce = purpleRevealing
     ? { x: 5, y: 6 }
@@ -216,12 +194,10 @@ export default function AuthCharacters({
 
   return (
     <div className="relative z-10 flex flex-col items-center gap-8">
-      {/* ── Stage ── */}
       <div
         className="relative flex items-end justify-center"
         style={{ width: 300, height: 250 }}
       >
-        {/* Orange sphere */}
         <div
           ref={orangeRef}
           className="absolute bottom-0 flex items-center justify-center rounded-full bg-linear-to-br from-noir-orange to-orange-700 shadow-[0_0_50px_rgba(255,139,16,0.45)]"
@@ -253,8 +229,6 @@ export default function AuthCharacters({
             />
           </div>
         </div>
-
-        {/* Purple cube */}
         <div
           ref={purpleRef}
           className="absolute bottom-0 flex items-start justify-center rounded-2xl bg-linear-to-tr from-noir-purple-bright to-indigo-900 shadow-[0_0_50px_rgba(90,24,154,0.45)]"
@@ -290,8 +264,6 @@ export default function AuthCharacters({
           </div>
         </div>
       </div>
-
-      {/* ── Tagline ── */}
       <div className="mt-4 text-center">
         <h2 className="mb-6 max-w-4xl text-xl font-black leading-tight tracking-tighter md:text-4xl">
           Construye mejor con

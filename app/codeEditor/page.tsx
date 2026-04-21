@@ -1,5 +1,12 @@
-import MonacoEditor from "./_components/monaco";
+"use client";
 
-export default function CodeEditor() {
-    return <MonacoEditor />;
+import dynamic from "next/dynamic";
+
+const CodeEditor = dynamic(() => import("./App"), {
+  ssr: false,
+  loading: () => <div style={{ padding: "20px" }}>Cargando editor...</div>,
+});
+
+export default function CodeEditorPage() {
+  return <CodeEditor />;
 }
