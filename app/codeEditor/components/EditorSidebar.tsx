@@ -8,12 +8,14 @@ interface EditorSidebarProps {
   terminalOpen: boolean;
   onToggleTerminal: () => void;
   aiPanelOpen: boolean;
+  onToggleCall: () => void;
   onToggleAiPanel: () => void;
 }
 
 export function EditorSidebar({
   terminalOpen,
   onToggleTerminal,
+  onToggleCall,
   aiPanelOpen,
   onToggleAiPanel,
 }: EditorSidebarProps) {
@@ -35,6 +37,7 @@ export function EditorSidebar({
       <Button
         size="icon"
         variant="ghost"
+        onClick={onToggleCall}
         className="cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white"
         title="Voice call"
         aria-label="Voice call"

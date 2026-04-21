@@ -8,11 +8,16 @@ import { saveSessionSnapshot } from "./api";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
 import { useSessionSocket } from "./hooks/useSessionSocket";
 import { useCodeExecution } from "./hooks/useCodeExecution";
+import { useWebRTC } from "./hooks/WebRTCHook/useWebRTC";
+import { useCallStore } from "./components/_stores/callStore";
 import { AIChatPanel } from "./components/AIChatPanel";
 import { EditorHeader } from "./components/EditorHeader";
 import { EditorSidebar } from "./components/EditorSidebar";
 import { EditorTabs } from "./components/EditorTabs";
 import { EditorTerminal } from "./components/EditorTerminal";
+import { CallModal } from "./components/VideoCall/CallModal";
+import { VideoCall } from "./components/VideoCall/VideoCall";
+import { IncomingCallDialog } from "./components/VideoCall/IncomingCallDialog";
 import {
   MonacoCanvas,
   type MonacoCanvasHandle,
@@ -79,9 +84,13 @@ const App = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
+  const [callModalOpen, setCallModalOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
+  const { isInCall, isIncomingCall } = useCallStore();
+  const userEmail = user?.email;
+  const { startCall } = useWebRTC(userEmail || '');
 
   useSessionSocket({
     token,
@@ -166,6 +175,8 @@ const App = () => {
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+          onToggleCall={() => setCallModalOpen(true)}
+
         />
 
         {aiPanelOpen && (
@@ -207,6 +218,20 @@ const App = () => {
           </Group>
         </div>
       </div>
+
+      <CallModal
+        open={callModalOpen}
+        onClose={() => setCallModalOpen(false)}
+        onStartCall={(emails) => {
+          startCall(emails);
+          setCallModalOpen(false);
+        }}
+        currentUserId={userEmail || ""}
+        sessionId={sessionId}
+        token={token}
+      />
+      {isInCall && <VideoCall />}
+      {isIncomingCall && <IncomingCallDialog userId={userEmail || ""} />}
     </div>
   );
 };
