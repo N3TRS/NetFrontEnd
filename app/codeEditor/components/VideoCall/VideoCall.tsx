@@ -36,7 +36,6 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set up local video
@@ -264,7 +263,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           </div>
 
           {/* Remote Videos */}
-          {remoteParticipants.map(([userId, stream], index) => (
+          {remoteParticipants.map(([userId], index) => (
             <div key={userId} className="relative overflow-hidden rounded-lg bg-gray-900">
               <video
                 data-user-id={userId}

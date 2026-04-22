@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import omnicodeImage from "@/public/OmniCodeDocumentation.png";
 import Link from "next/link";
 import { Code2, GitBranch, Brain, PenTool, Zap, CheckCircle } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Documentación | OmniCode",
+  description: "Guía completa de OmniCode: editor colaborativo multi-lenguaje, ejecución de repositorios y pizarra de diseño.",
+};
 
 const SECTIONS = [
   { id: "introduccion", label: "Introducción" },
