@@ -1,7 +1,7 @@
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 
 const SESSIONS_API_BASE =
-  process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002/v1';
+  process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
 
 const AI_API_BASE = process.env.NEXT_PUBLIC_AI || 'https://omnicode-api-python.azurewebsites.net/';
 
@@ -63,14 +63,14 @@ export interface SessionSummary {
 export const listSessions = (
   token: string,
 ): Promise<{ sessions: SessionSummary[] }> =>
-  request('/sessions', { method: 'GET', token });
+  request('/v1/sessions', { method: 'GET', token });
 
 export const renameSession = (
   token: string,
   sessionId: string,
   name: string,
 ): Promise<{ session: SessionSummary }> =>
-  request(`/sessions/${sessionId}/rename`, {
+  request(`/v1/sessions/${sessionId}/rename`, {
     method: 'PATCH',
     token,
     body: { name },
@@ -80,14 +80,14 @@ export const deleteSession = (
   token: string,
   sessionId: string,
 ): Promise<{ session: SessionSummary }> =>
-  request(`/sessions/${sessionId}`, { method: 'DELETE', token });
+  request(`/v1/sessions/${sessionId}`, { method: 'DELETE', token });
 
 export const createSession = (
   token: string,
   name: string,
   language: keyof typeof LANGUAGE_VERSIONS = 'javascript',
 ): Promise<{ session: SessionSummary }> =>
-  request('/sessions', {
+  request('/v1/sessions', {
     method: 'POST',
     token,
     body: { name, language },
@@ -97,7 +97,7 @@ export const joinSession = (
   token: string,
   inviteCode: string,
 ): Promise<{ session: SessionSummary }> =>
-  request('/sessions/join', {
+  request('/v1/sessions/join', {
     method: 'POST',
     token,
     body: { inviteCode: inviteCode.trim().toUpperCase() },
@@ -109,7 +109,7 @@ export const executeCode = (
   language: keyof typeof LANGUAGE_VERSIONS,
   code: string,
 ) =>
-  request('/executions/run', {
+  request('/v1/executions/run', {
     method: 'POST',
     token,
     body: {
@@ -125,7 +125,7 @@ export const saveSessionSnapshot = (
   language: keyof typeof LANGUAGE_VERSIONS,
   code: string,
 ) =>
-  request(`/sessions/${sessionId}/snapshots`, {
+  request(`/v1/sessions/${sessionId}/snapshots`, {
     method: 'POST',
     token,
     body: {
