@@ -51,7 +51,7 @@ export function useSessionCallData(): UseSessionCallDataResult {
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+        const response = await fetch(`${API_BASE_URL}/v1/sessions/${sessionId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
