@@ -3,7 +3,6 @@ import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 const SESSIONS_API_BASE =
   process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
 
-const AI_API_BASE = process.env.NEXT_PUBLIC_AI || 'https://omnicode-api-python.azurewebsites.net/';
 
 export class HttpError extends Error {
   constructor(
@@ -144,7 +143,7 @@ export async function analyzeCode(
   prompt: string,
   code: string,
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${AI_API_BASE}/analyze`, {
+  const res = await fetch(`${SESSIONS_API_BASE}/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt, code }),

@@ -55,7 +55,8 @@ export const useWebRTC = (userId: string) => {
   useEffect(() => {
     if (!userId) return;
 
-    const socket = io(process.env.NEXT_PUBLIC_URL_CALLS, {
+    const CALLS_URL = process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
+    const socket = io(CALLS_URL, {
       transports: ['websocket'],
       reconnection: true,
     });

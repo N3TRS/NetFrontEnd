@@ -20,7 +20,8 @@ export function loginHook() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/auth/signin`, {
+      const API = process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
+      const response = await fetch(`${API}/auth/signin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
