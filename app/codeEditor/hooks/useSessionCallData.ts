@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_SESSION_API_URL || "http://localhost:3002/v1";
+  process.env.NEXT_PUBLIC_URL_APIGATEWAY || "http://localhost:3002/v1";
 
 export interface SessionParticipant {
   email: string;

@@ -1,27 +1,26 @@
 "use client";
 
 import { useCallStore } from "../_stores/callStore";
-import { useWebRTC } from "../../hooks/WebRTCHook/useWebRTC";
 import { Phone, PhoneOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface IncomingCallDialogProps {
-  userId: string;
+  onAcceptCall: (callId: string) => void | Promise<void>;
+  onRejectCall: (callId: string) => void | Promise<void>;
 }
 
-export function IncomingCallDialog({ userId }: IncomingCallDialogProps) {
+export function IncomingCallDialog({ onAcceptCall, onRejectCall }: IncomingCallDialogProps) {
   const { isIncomingCall, currentCall } = useCallStore();
-  const { acceptCall, rejectCall } = useWebRTC(userId);
 
   const handleAccept = () => {
     if (currentCall) {
-      acceptCall(currentCall.id);
+      onAcceptCall(currentCall.id);
     }
   };
 
   const handleReject = () => {
     if (currentCall) {
-      rejectCall(currentCall.id);
+      onRejectCall(currentCall.id);
     }
   };
 

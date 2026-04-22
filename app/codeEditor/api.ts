@@ -1,7 +1,7 @@
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 
 const SESSIONS_API_BASE =
-  process.env.NEXT_PUBLIC_SESSION_API_URL || 'http://localhost:3002/v1';
+  process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002/v1';
 
 const AI_API_BASE = process.env.NEXT_PUBLIC_AI || 'https://omnicode-api-python.azurewebsites.net/';
 

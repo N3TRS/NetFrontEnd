@@ -12,10 +12,12 @@ import {
   PhoneOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWebRTC } from "../../hooks/WebRTCHook/useWebRTC";
-import { useAuth } from "@/app/auth/_hooks/useAuth";
 
-export function VideoCall() {
+interface VideoCallProps {
+  onEndCall: () => void | Promise<void>;
+}
+
+export function VideoCall({ onEndCall }: VideoCallProps) {
   const { 
     isInCall, 
     localStream, 
@@ -27,10 +29,6 @@ export function VideoCall() {
   } = useCallStore();
   
   const remoteStreams = new Map<string, MediaStream>(remoteStreamsList.map(s => [s.userId, s.stream]));
-  
-  const { user } = useAuth();
-  const userId = user?.email || "guest";
-  const { endCall } = useWebRTC(userId);
   
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
   const [position, setPosition] = useState({ x: 20, y: 80 });
@@ -208,7 +206,7 @@ export function VideoCall() {
           </button>
 
           <button
-            onClick={endCall}
+            onClick={onEndCall}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 transition-colors hover:bg-red-600"
           >
             <PhoneOff className="h-3 w-3 text-white" />
@@ -314,7 +312,7 @@ export function VideoCall() {
         </button>
 
         <button
-          onClick={endCall}
+          onClick={onEndCall}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500 transition-colors hover:bg-red-600"
         >
           <PhoneOff className="h-5 w-5 text-white" />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useCallStore } from '../../components/_stores/callStore';
+import { useCallStore, type Call } from '../../components/_stores/callStore';
 import { io, Socket } from 'socket.io-client';
 
 
@@ -17,6 +17,28 @@ const DEFAULT_CONFIG: WebRTCConfig = {
 export const useWebRTC = (userId: string) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+
+  const isCall = (value: unknown): value is Call => {
+    if (!value || typeof value !== 'object') {
+      return false;
+    }
+
+    return 'id' in value && 'callerId' in value && 'participants' in value;
+  };
+
+  const getCallFromPayload = (payload: unknown): Call | null => {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+
+    const callCandidate = 'call' in payload ? payload.call : payload;
+
+    if (!isCall(callCandidate)) {
+      return null;
+    }
+
+    return callCandidate;
+  };
   
   const {
     setLocalStream,
@@ -49,15 +71,22 @@ export const useWebRTC = (userId: string) => {
     });
 
     // Handle incoming call
-    socket.on('incoming-call', (data: { call: any }) => {
-      console.log('Incoming call:', data.call);
-      setCurrentCall(data.call);
+    socket.on('incoming-call', (payload: unknown) => {
+      const call = getCallFromPayload(payload);
+      console.log('Incoming call:', call);
+
+      if (!call) {
+        console.warn('Incoming call payload missing call data:', payload);
+        return;
+      }
+
+      setCurrentCall(call);
       setIsIncomingCall(true);
       // NOTE: We do NOT request media here - only when accepting
     });
 
     // Handle call accepted
-    socket.on('call-accepted', (data: { call: any; userId: string }) => {
+    socket.on('call-accepted', (data: { call: Call; userId: string }) => {
       console.log('Call accepted by:', data.userId);
       setCurrentCall(data.call);
       
@@ -68,19 +97,19 @@ export const useWebRTC = (userId: string) => {
     });
 
     // Handle call rejected
-    socket.on('call-rejected', (data: { call: any; userId: string }) => {
+    socket.on('call-rejected', (data: { call: Call; userId: string }) => {
       console.log('Call rejected by:', data.userId);
       setCurrentCall(data.call);
     });
 
     // Handle call ended
-    socket.on('call-ended', (data: { call: any }) => {
+    socket.on('call-ended', () => {
       console.log('Call ended');
       endCall();
     });
 
     // Handle call missed
-    socket.on('call-missed', (data: { call: any }) => {
+    socket.on('call-missed', () => {
       console.log('Call missed');
       resetCall();
     });

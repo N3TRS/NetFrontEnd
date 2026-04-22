@@ -90,7 +90,7 @@ const App = () => {
   const canvasRef = useRef<MonacoCanvasHandle>(null);
   const { isInCall, isIncomingCall } = useCallStore();
   const userEmail = user?.email;
-  const { startCall } = useWebRTC(userEmail || '');
+  const { startCall, acceptCall, rejectCall, endCall } = useWebRTC(userEmail || '');
 
   useSessionSocket({
     token,
@@ -230,8 +230,13 @@ const App = () => {
         sessionId={sessionId}
         token={token}
       />
-      {isInCall && <VideoCall />}
-      {isIncomingCall && <IncomingCallDialog userId={userEmail || ""} />}
+      {isInCall && <VideoCall onEndCall={endCall} />}
+      {isIncomingCall && (
+        <IncomingCallDialog
+          onAcceptCall={acceptCall}
+          onRejectCall={rejectCall}
+        />
+      )}
     </div>
   );
 };
