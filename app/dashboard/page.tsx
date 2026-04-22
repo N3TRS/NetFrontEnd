@@ -36,9 +36,7 @@ export default function Dashboard() {
     resetJoinState,
   } = useSessionActions();
 
-  const handleRepoSelected = (repo: GithubRepo) => {
-    console.log("Repo seleccionado:", repo.clone_url);
-  };
+  const handleRepoSelected = (_repo: GithubRepo) => {};
 
   const openCreateModal = () => {
     resetCreateState();

@@ -88,7 +88,7 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
     const observer = new ResizeObserver(() => {
       try {
         fitAddon.fit()
-      } catch (e) {
+      } catch {
       }
     })
 
