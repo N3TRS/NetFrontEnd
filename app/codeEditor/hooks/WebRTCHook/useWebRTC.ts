@@ -62,19 +62,14 @@ export const useWebRTC = (userId: string) => {
     });
 
     socket.on('connect', () => {
-      console.log('Connected to NetCalls service');
-      // Register user
       socket.emit('register', { userId });
     });
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from NetCalls service');
-    });
+    socket.on('disconnect', () => {});
 
     // Handle incoming call
     socket.on('incoming-call', (payload: unknown) => {
       const call = getCallFromPayload(payload);
-      console.log('Incoming call:', call);
 
       if (!call) {
         console.warn('Incoming call payload missing call data:', payload);
@@ -88,7 +83,6 @@ export const useWebRTC = (userId: string) => {
 
     // Handle call accepted
     socket.on('call-accepted', (data: { call: Call; userId: string }) => {
-      console.log('Call accepted by:', data.userId);
       setCurrentCall(data.call);
       
       // If we already have local stream, create offer to new participant
@@ -99,35 +93,28 @@ export const useWebRTC = (userId: string) => {
 
     // Handle call rejected
     socket.on('call-rejected', (data: { call: Call; userId: string }) => {
-      console.log('Call rejected by:', data.userId);
       setCurrentCall(data.call);
     });
 
     // Handle call ended
     socket.on('call-ended', () => {
-      console.log('Call ended');
       endCall();
     });
 
-    // Handle call missed
     socket.on('call-missed', () => {
-      console.log('Call missed');
       resetCall();
     });
 
     // WebRTC Signaling
     socket.on('webrtc:offer', async (data: { from: string; offer: RTCSessionDescriptionInit }) => {
-      console.log('Received offer from:', data.from);
       await handleOffer(data.from, data.offer);
     });
 
     socket.on('webrtc:answer', async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
-      console.log('Received answer from:', data.from);
       await handleAnswer(data.from, data.answer);
     });
 
     socket.on('webrtc:ice-candidate', async (data: { from: string; candidate: RTCIceCandidateInit }) => {
-      console.log('Received ICE candidate from:', data.from);
       await handleIceCandidate(data.from, data.candidate);
     });
 
@@ -178,15 +165,12 @@ export const useWebRTC = (userId: string) => {
 
     // Handle remote stream
     pc.ontrack = (event) => {
-      console.log('Received remote track from:', remoteUserId);
       const [remoteStream] = event.streams;
       addRemoteStream(remoteUserId, remoteStream);
     };
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log(`Connection state with ${remoteUserId}:`, pc.connectionState);
-      
       if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
         removeRemoteStream(remoteUserId);
         peerConnectionsRef.current.delete(remoteUserId);
@@ -290,7 +274,6 @@ export const useWebRTC = (userId: string) => {
         });
       }
 
-      console.log('Call accepted successfully');
     } catch (error) {
       console.error('Error accepting call:', error);
       resetCall();
@@ -314,33 +297,25 @@ export const useWebRTC = (userId: string) => {
   }, [userId]);
   //End call
   const endCall = useCallback(async () => {
-    console.log('Ending call...', { callId: currentCall?.id, userId });
     const callId = currentCall?.id;
-    
-    // First: Close all peer connections
+
     peerConnectionsRef.current.forEach((pc) => {
       pc.close();
     });
     peerConnectionsRef.current.clear();
-    console.log('Peer connections closed');
 
-    // Second: Reset local state (stops media streams)
     resetCall();
-    console.log('Local state reset');
 
-    // Finally: Notify backend
     if (callId && socketRef.current) {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/${callId}/end`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Failed to end call on server:', response.status, errorText);
-        } else {
-          console.log('Call ended on server');
         }
       } catch (error) {
         console.error('Error ending call:', error);
@@ -350,16 +325,9 @@ export const useWebRTC = (userId: string) => {
 
   // Start a new call
   const startCall = useCallback(async (participantIds: string[]) => {
-    console.log('Starting call...', { userId, participants: participantIds, currentCall, isInCall: useCallStore.getState().isInCall });
-    
-    if (!socketRef.current) {
-      console.error('Socket not connected');
-      return;
-    }
+    if (!socketRef.current) return;
 
     try {
-      console.log('Creating call with:', { callerId: userId, participants: participantIds });
-      
       const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -376,7 +344,6 @@ export const useWebRTC = (userId: string) => {
       }
 
       const { call } = await response.json();
-      console.log('Call created:', call);
       setCurrentCall(call);
 
       const stream = await getUserMedia(true, true);
@@ -386,8 +353,6 @@ export const useWebRTC = (userId: string) => {
       }
 
       setIsInCall(true);
-
-      console.log('Call started successfully');
     } catch (error) {
       console.error('Error starting call:', error);
       resetCall();
