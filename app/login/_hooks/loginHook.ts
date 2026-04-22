@@ -47,4 +47,3 @@ export function loginHook() {
 
   return { email, password, setEmail, setPassword, handleLogin, isPending };
 }
-
