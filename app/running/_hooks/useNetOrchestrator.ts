@@ -55,7 +55,6 @@ export const useNetOrchestrator = () => {
       })
 
       socket.on("connect", () => {
-        console.log("WebSocket connected, requesting logs for:", jobName)
         socket!.emit("logs", jobName)
       })
 
@@ -67,7 +66,6 @@ export const useNetOrchestrator = () => {
 
       socket.on("logs:complete", () => {
         if (!cancelled) {
-          console.log("Build completed - Ready for testing (30 min)")
           callbacks.onComplete(0)
         }
       })
@@ -85,7 +83,6 @@ export const useNetOrchestrator = () => {
       })
 
       socket.on("disconnect", () => {
-        console.log("WebSocket disconnected")
         if (!cancelled) {
           if (socket!.connected === false && !cancelled) {
             callbacks.onError("WebSocket connection lost")

@@ -36,31 +36,25 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set up local video
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
-      console.log('Local stream connected to video element');
     }
-  }, [localStream, isMinimized]); 
+  }, [localStream, isMinimized]);
 
   useEffect(() => {
-    console.log('Setting up remote videos, count:', remoteStreams.size);
-    
     const timer = setTimeout(() => {
       remoteStreams.forEach((stream, userId) => {
         const videoElements = document.querySelectorAll(`[data-user-id="${userId}"]`);
-        console.log(`Found ${videoElements.length} video element(s) for ${userId}`);
-        
+
         videoElements.forEach((element) => {
           const videoEl = element as HTMLVideoElement;
           if (videoEl && videoEl.srcObject !== stream) {
             videoEl.srcObject = stream as MediaStream;
-            videoEl.play().catch(e => console.log('Autoplay prevented:', e));
-            console.log(`Remote stream connected for ${userId}`);
+            videoEl.play().catch(() => {});
           }
         });
       });
@@ -264,7 +258,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           </div>
 
           {/* Remote Videos */}
-          {remoteParticipants.map(([userId, stream], index) => (
+          {remoteParticipants.map(([userId], index) => (
             <div key={userId} className="relative overflow-hidden rounded-lg bg-gray-900">
               <video
                 data-user-id={userId}

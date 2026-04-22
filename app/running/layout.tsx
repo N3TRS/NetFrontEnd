@@ -1,4 +1,10 @@
-import HeaderRunnning from "./_components/Header"
+import type { Metadata } from "next";
+import HeaderRunnning from "./_components/Header";
+
+export const metadata: Metadata = {
+  title: "Ejecutar Repositorio | OmniCode",
+  description: "Ejecuta tu repositorio de GitHub en la nube y obtén una URL de prueba pública.",
+};
 
 export default function RunningLayout({
   children,
