@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^3.34.0",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@monaco-editor/react": "^4.7.0",
     "@paper-design/shaders-react": "^0.0.75",
     "@xterm/addon-fit": "^0.11.0",

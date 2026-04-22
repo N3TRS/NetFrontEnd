@@ -14,7 +14,7 @@ export default function HeroSection() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
         </span>
-        Con AI-Powered Pair Programming
+        Plataforma Colaborativa Multi-Lenguaje
       </div>
 
       <h1 className="mb-6 max-w-4xl text-5xl font-black leading-tight tracking-tighter md:text-7xl">
@@ -25,9 +25,9 @@ export default function HeroSection() {
       </h1>
 
       <p className="mb-12 max-w-2xl text-lg font-light text-muted-foreground md:text-xl">
-        Experimenta el poder de un IDE completo de SpringBoot en tu navegador.
-        Construye, prueba y despliega con asistencia de IA y colaboración en
-        tiempo real. No más &ldquo;en mi máquina funciona&rdquo;.
+        Escribe y ejecuta código en múltiples lenguajes en tiempo real con tu
+        equipo. Ejecuta repositorios completos y obtén una URL de prueba
+        instantánea. Con asistencia de IA integrada y sin configuración local.
       </p>
 
       <div className="mb-20 flex flex-col gap-4 sm:flex-row">
