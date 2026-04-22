@@ -52,9 +52,7 @@ export function useSessionSocket({
   }, [onPresence]);
 
   const socketBaseUrl = useMemo(() => {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_SESSIONS_API_URL || "http://localhost:3002/v1";
-    return apiUrl.replace(/\/v1\/?$/, "");
+    return process.env.NEXT_PUBLIC_URL_APIGATEWAY || "http://localhost:3002";
   }, []);
 
   useEffect(() => {

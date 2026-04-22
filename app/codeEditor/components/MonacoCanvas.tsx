@@ -26,8 +26,7 @@ interface MonacoCanvasProps {
   language: Language;
 }
 
-const YJS_WS_BASE =
-  process.env.NEXT_PUBLIC_YJS_WS_URL || "ws://localhost:3002/ws/yjs";
+const YJS_WS_BASE = (process.env.NEXT_PUBLIC_URL_APIGATEWAY?.replace(/^https/, "wss").replace(/^http/, "ws") || "ws://localhost:3002") + "/ws/yjs";;
 
 export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
   function MonacoCanvas({ sessionId, token, userEmail, language }, ref) {

@@ -2,15 +2,22 @@
 
 import { Folder, Phone, Sparkles, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface EditorSidebarProps {
   terminalOpen: boolean;
   onToggleTerminal: () => void;
+  aiPanelOpen: boolean;
+  onToggleCall: () => void;
+  onToggleAiPanel: () => void;
 }
 
 export function EditorSidebar({
   terminalOpen,
   onToggleTerminal,
+  onToggleCall,
+  aiPanelOpen,
+  onToggleAiPanel,
 }: EditorSidebarProps) {
   return (
     <aside
@@ -30,6 +37,7 @@ export function EditorSidebar({
       <Button
         size="icon"
         variant="ghost"
+        onClick={onToggleCall}
         className="cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white"
         title="Voice call"
         aria-label="Voice call"
@@ -40,9 +48,14 @@ export function EditorSidebar({
       <Button
         size="icon"
         variant="ghost"
-        className="cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white"
-        title="AI assistant"
-        aria-label="AI assistant"
+        onClick={onToggleAiPanel}
+        aria-pressed={aiPanelOpen}
+        className={cn(
+          "cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white",
+          aiPanelOpen && "bg-white/5 text-white",
+        )}
+        title={aiPanelOpen ? "Hide AI assistant" : "Show AI assistant"}
+        aria-label="Toggle AI assistant"
       >
         <Sparkles className="size-4" aria-hidden />
       </Button>
