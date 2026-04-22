@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { User, AtSign, ArrowRight, Eye, EyeOff } from "lucide-react";
 
@@ -10,12 +11,6 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { githubLoginHook } from "../../login/_hooks/githubLoginHook";
 import { signUpHook } from "../_hooks/signUpHook";
-
-interface FormState {
-  fullName: string;
-  email: string;
-  password: string;
-}
 
 interface FieldError {
   fullName?: string;
@@ -49,10 +44,9 @@ export default function RegistrationForm({
   onPasswordChange,
 }: RegistrationFormProps = {}) {
   const [errors, setErrors] = useState<FieldError>({});
-  const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { handleGithubLogin } = githubLoginHook();
-  const { name, email, password, setName, setEmail, setPassword, handleSignUp } = signUpHook();
+  const { name, email, password, setName, setEmail, setPassword, handleSignUp, isPending } = signUpHook();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,23 +59,6 @@ export default function RegistrationForm({
     if (name === "password") onPasswordChange?.(value);
   };
 
-  const validate = (): boolean => {
-    const next: FieldError = {};
-    if (!name.trim()) next.fullName = "El nombre es requerido.";
-    if (!email.trim()) {
-      next.email = "El email es requerido.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = "Ingrese una dirección de email válida.";
-    }
-    if (!password) {
-      next.password = "La contraseña es requerida.";
-    } else if (password.length < 8) {
-      next.password = "Mínimo 8 caracteres.";
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <Button
@@ -90,10 +67,12 @@ export default function RegistrationForm({
         className="h-12 w-full gap-3 rounded-xl border-primary/20 text-sm font-medium hover:bg-primary/5"
         onClick={handleGithubLogin}
       >
-        <img
+        <Image
           src="/github-icon-logo.png"
           alt=""
           aria-hidden="true"
+          width={20}
+          height={20}
           className="size-5 shrink-0"
         />
         Continuar con GitHub

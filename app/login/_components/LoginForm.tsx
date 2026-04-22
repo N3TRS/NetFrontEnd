@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
+import Image from "next/image";
 import { loginHook } from "../_hooks/loginHook";
 import { githubLoginHook } from "../_hooks/githubLoginHook";
 
@@ -11,11 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-
-interface FormState {
-  email: string;
-  password: string;
-}
 
 export interface LoginFormProps {
   onTypingChange?: (isTyping: boolean) => void;
@@ -25,10 +21,12 @@ export interface LoginFormProps {
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
-    <img
+    <Image
       src="/github-icon-logo.png"
       alt=""
       aria-hidden="true"
+      width={20}
+      height={20}
       className={cn("size-5 shrink-0", className)}
     />
   );

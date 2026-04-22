@@ -34,7 +34,7 @@ export default function TerminalFooter({
   exitCode,
 }: TerminalFooterProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const { getStatusColor, getStatusText, secondaryStyles, textSecondary } = useTerminalStyles({ status: status as any })
+  const { getStatusColor, secondaryStyles, textSecondary } = useTerminalStyles({ status: status as any })
 
   useEffect(() => {
     if (status !== "running" || !startTime) {
