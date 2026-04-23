@@ -8,8 +8,8 @@ ignoredBuiltDependencies:
 overrides:
   '@hono/node-server@<1.19.13': '>=1.19.13'
   axios@<1.15.0: '>=1.15.0'
-  brace-expansion@<1.1.13: '>=1.1.13'
-  brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'
+  brace-expansion@>=1.0.0 <1.1.13: '1.1.13'
+  brace-expansion@>=4.0.0 <5.0.5: '5.0.5'
   dompurify@<3.4.0: '>=3.4.0'
   lodash-es@>=4.0.0 <4.17.23: '>=4.17.23'
   nanoid@>=3.0.0 <3.3.8: '>=3.3.8'
