@@ -39,7 +39,7 @@ export const useWebRTC = (userId: string) => {
 
     return callCandidate;
   };
-  
+
   const {
     setLocalStream,
     addRemoteStream,
@@ -57,6 +57,7 @@ export const useWebRTC = (userId: string) => {
 
     const CALLS_URL = process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
     const socket = io(CALLS_URL, {
+      path: '/calls/socket.io',
       transports: ['websocket'],
       reconnection: true,
     });
@@ -65,7 +66,7 @@ export const useWebRTC = (userId: string) => {
       socket.emit('register', { userId });
     });
 
-    socket.on('disconnect', () => {});
+    socket.on('disconnect', () => { });
 
     // Handle incoming call
     socket.on('incoming-call', (payload: unknown) => {
@@ -84,7 +85,7 @@ export const useWebRTC = (userId: string) => {
     // Handle call accepted
     socket.on('call-accepted', (data: { call: Call; userId: string }) => {
       setCurrentCall(data.call);
-      
+
       // If we already have local stream, create offer to new participant
       if (useCallStore.getState().localStream && data.userId !== userId) {
         createOffer(data.userId);
@@ -132,7 +133,7 @@ export const useWebRTC = (userId: string) => {
         audio,
         video: video ? { width: 1280, height: 720 } : false,
       });
-      
+
       setLocalStream(stream);
       return stream;
     } catch (error) {
@@ -204,7 +205,7 @@ export const useWebRTC = (userId: string) => {
     try {
       const pc = createPeerConnection(remoteUserId);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
-      
+
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
@@ -257,7 +258,7 @@ export const useWebRTC = (userId: string) => {
       if (!response.ok) throw new Error('Failed to accept call');
 
       const stream = await getUserMedia(true, true);
-      
+
       if (!stream) {
         throw new Error('Could not access media devices');
       }
@@ -347,7 +348,7 @@ export const useWebRTC = (userId: string) => {
       setCurrentCall(call);
 
       const stream = await getUserMedia(true, true);
-      
+
       if (!stream) {
         throw new Error('Could not access media devices');
       }
