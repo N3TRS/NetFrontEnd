@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "audit": "pnpm audit --audit-level high"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.34.0",
