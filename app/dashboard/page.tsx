@@ -1,6 +1,7 @@
 "use client";
-import { FolderOpen } from "lucide-react";
+import { FolderOpen, GitBranch, PenTool } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import EmptyState from "./_components/EmptyState";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import { useState } from "react";
@@ -35,9 +36,7 @@ export default function Dashboard() {
     resetJoinState,
   } = useSessionActions();
 
-  const handleRepoSelected = (repo: GithubRepo) => {
-    console.log("Repo seleccionado:", repo.clone_url);
-  };
+  const handleRepoSelected = (_repo: GithubRepo) => {};
 
   const openCreateModal = () => {
     resetCreateState();
@@ -95,11 +94,30 @@ export default function Dashboard() {
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <FolderOpen className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold">Proyectos Spring Boot</h2>
+            <GitBranch className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold">Repositorios GitHub</h2>
           </div>
         </div>
         <EmptyState onSelectProject={() => setConfigOpen(true)} />
+
+        <hr className="border-white/5" />
+
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <PenTool className="h-5 w-5 text-accent" />
+            <h2 className="text-xl font-bold">Diseño</h2>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 flex flex-col items-center gap-4 text-center">
+          <p className="text-muted-foreground text-sm max-w-md">
+            Crea diagramas, wireframes y esquemas de arquitectura con la pizarra colaborativa.
+          </p>
+          <Link href="/design">
+            <Button className="cursor-pointer bg-accent hover:bg-accent/85 text-accent-foreground font-semibold px-6 glow-purple transition-all">
+              Abrir Pizarra
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <SelectProject

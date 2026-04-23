@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import NavBar from "./_components/Header";
 import AuthGuard from "./_components/AuthGuard";
+
+export const metadata: Metadata = {
+  title: "Dashboard | OmniCode",
+  description: "Gestiona tus sesiones colaborativas y repositorios desde el dashboard de OmniCode.",
+};
 
 export default function DashboardLayout({
   children,

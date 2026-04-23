@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-dropdown-menu"],
+  },
 };
 
 export default nextConfig;
