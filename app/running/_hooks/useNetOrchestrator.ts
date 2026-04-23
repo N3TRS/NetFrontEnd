@@ -2,8 +2,8 @@
 
 import { io, Socket } from "socket.io-client"
 
-const ORCHESTRATOR_BASE = "/api/orchestrator"
-const ORCHESTRATOR_WS = process.env.NEXT_PUBLIC_ORCHESTRATOR_WS || "http://localhost:3001"
+const ORCHESTRATOR_BASE = process.env.NEXT_PUBLIC_URL_APIGATEWAY
+const ORCHESTRATOR_WS = process.env.NEXT_PUBLIC_URL_APIGATEWAY
 
 interface SubmitBuildResponse {
   jobName: string
@@ -19,7 +19,7 @@ interface StreamLogsCallbacks {
 export const useNetOrchestrator = () => {
   const submitBuild = async (repoUrl: string): Promise<string> => {
     try {
-      const response = await fetch(`${ORCHESTRATOR_BASE}/run`, {
+      const response = await fetch(`${ORCHESTRATOR_BASE}/orchestrator/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
