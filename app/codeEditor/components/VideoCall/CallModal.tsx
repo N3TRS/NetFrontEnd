@@ -29,28 +29,30 @@ export function CallModal({
   const { getSessionParticipants } = useSessionCallData();
 
   useEffect(() => {
-    if (open && sessionId && token) {
-      loadParticipants();
-    } else {
+    if (!open || !sessionId || !token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedParticipants([]);
       setParticipants([]);
       setError(null);
+      return;
     }
-  }, [open, sessionId, token]);
 
-  const loadParticipants = async () => {
-    if (!sessionId || !token) return;
-    
+    let cancelled = false;
     setLoading(true);
     setError(null);
-    const data = await getSessionParticipants(sessionId, token);
-    if (data) {
-      setParticipants(data.participants);
-    } else {
-      setError("Error al cargar participantes");
-    }
-    setLoading(false);
-  };
+
+    getSessionParticipants(sessionId, token).then((data) => {
+      if (cancelled) return;
+      if (data) {
+        setParticipants(data.participants);
+      } else {
+        setError("Error al cargar participantes");
+      }
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [open, sessionId, token, getSessionParticipants]);
 
   if (!open) return null;
 

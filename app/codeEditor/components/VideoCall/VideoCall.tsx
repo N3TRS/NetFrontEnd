@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCallStore } from "../_stores/callStore";
 import { 
   Mic, 
@@ -28,7 +28,10 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     toggleVideo 
   } = useCallStore();
   
-  const remoteStreams = new Map<string, MediaStream>(remoteStreamsList.map(s => [s.userId, s.stream]));
+  const remoteStreams = useMemo(
+    () => new Map<string, MediaStream>(remoteStreamsList.map(s => [s.userId, s.stream])),
+    [remoteStreamsList],
+  );
   
   const [isMinimized, setIsMinimized] = useState(true); // Start minimized
   const [position, setPosition] = useState({ x: 20, y: 80 });
@@ -75,18 +78,18 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     }
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
       setPosition({
         x: e.clientX - dragOffset.x,
         y: e.clientY - dragOffset.y,
       });
     }
-  };
+  }, [isDragging, dragOffset]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -97,7 +100,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         window.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   if (!isInCall) return null;
 

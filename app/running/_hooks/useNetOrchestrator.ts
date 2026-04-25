@@ -70,7 +70,7 @@ export const useNetOrchestrator = () => {
         }
       })
 
-      socket.on("logs:error", (error: any) => {
+      socket.on("logs:error", (error: Error) => {
         if (!cancelled) {
           const errorMsg = typeof error === "string" ? error : error?.message || "Unknown error"
           console.error("WebSocket error:", errorMsg)
@@ -91,7 +91,7 @@ export const useNetOrchestrator = () => {
         }
       })
 
-      socket.on("connect_error", (error: any) => {
+      socket.on("connect_error", (error: Error) => {
         if (!cancelled) {
           console.error("WebSocket connection error:", error.message)
           callbacks.onError(`Connection error: ${error.message}`)

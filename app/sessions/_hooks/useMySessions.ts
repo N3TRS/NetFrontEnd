@@ -22,12 +22,11 @@ export function useMySessions(token: string | null): UseMySessionsResult {
 
   useEffect(() => {
     if (!token) {
-      setSessions(null);
-      setIsLoading(false);
       return;
     }
 
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     setError(null);
 
@@ -69,5 +68,5 @@ export function useMySessions(token: string | null): UseMySessionsResult {
     setSessions((prev) => (prev ? prev.filter((s) => s.id !== id) : prev));
   }, []);
 
-  return { sessions, isLoading, error, refetch, updateSessionName, removeSession };
+  return { sessions: token ? sessions : null, isLoading: token ? isLoading : false, error, refetch, updateSessionName, removeSession };
 }

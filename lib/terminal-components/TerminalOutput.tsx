@@ -65,16 +65,19 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
   const { resolvedTheme } = useTheme()
   const writtenCountRef = useRef(0)
 
-  const terminalOptions = useMemo(() => ({
-    allowTransparency: true,
-    theme: getXTermColorsFromCSS(),
-    fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
-    fontSize: 13,
-    lineHeight: 1.4,
-    cursorBlink: true,
-    cursorStyle: "block" as const,
-    scrollback: 10000,
-  }), [resolvedTheme])
+  const terminalOptions = useMemo(() => {
+    void resolvedTheme; // recompute when theme changes so getXTermColorsFromCSS reads updated CSS vars
+    return {
+      allowTransparency: true,
+      theme: getXTermColorsFromCSS(),
+      fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+      fontSize: 13,
+      lineHeight: 1.4,
+      cursorBlink: true,
+      cursorStyle: "block" as const,
+      scrollback: 10000,
+    };
+  }, [resolvedTheme])
 
   const fitAddon = useMemo(() => new FitAddon(), [])
   const addons = useMemo(() => [fitAddon], [fitAddon])

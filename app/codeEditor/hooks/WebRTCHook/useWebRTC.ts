@@ -123,6 +123,7 @@ export const useWebRTC = (userId: string) => {
     return () => {
       socket.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Get user media (ONLY called when accepting call)
@@ -278,6 +279,7 @@ export const useWebRTC = (userId: string) => {
       console.error('Error accepting call:', error);
       resetCall();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentCall]);
 
   const rejectCall = useCallback(async (callId: string) => {
@@ -294,7 +296,7 @@ export const useWebRTC = (userId: string) => {
     } catch (error) {
       console.error('Error rejecting call:', error);
     }
-  }, [userId]);
+  }, [userId, resetCall]);
   //End call
   const endCall = useCallback(async () => {
     const callId = currentCall?.id;
@@ -321,7 +323,7 @@ export const useWebRTC = (userId: string) => {
         console.error('Error ending call:', error);
       }
     }
-  }, [currentCall, userId, resetCall]);
+  }, [currentCall, resetCall]);
 
   // Start a new call
   const startCall = useCallback(async (participantIds: string[]) => {
@@ -357,6 +359,7 @@ export const useWebRTC = (userId: string) => {
       console.error('Error starting call:', error);
       resetCall();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentCall]);
 
   return {

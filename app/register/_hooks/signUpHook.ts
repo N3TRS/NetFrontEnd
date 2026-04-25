@@ -7,7 +7,7 @@ interface SignUpRequest {
   password: string;
 }
 
-export function signUpHook() {
+export function useSignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

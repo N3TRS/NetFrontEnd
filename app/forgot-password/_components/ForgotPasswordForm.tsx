@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 
-import { forgotPasswordHook } from "../_hooks/forgotPasswordHook";
+import { useForgotPassword } from "../_hooks/forgotPasswordHook";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 export default function ForgotPasswordForm() {
-  const { email, setEmail, handleForgot, isPending, submitted } = forgotPasswordHook();
+  const { email, setEmail, handleForgot, isPending, submitted } = useForgotPassword();
 
   if (submitted) {
     return (

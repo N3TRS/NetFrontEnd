@@ -36,7 +36,8 @@ export default function Dashboard() {
     resetJoinState,
   } = useSessionActions();
 
-  const handleRepoSelected = (_repo: GithubRepo) => {};
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleRepoSelected = (_: GithubRepo) => {};
 
   const openCreateModal = () => {
     resetCreateState();

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { githubLoginHook } from "../../login/_hooks/githubLoginHook";
-import { signUpHook } from "../_hooks/signUpHook";
+import { useSignUp } from "../_hooks/signUpHook";
 
 interface FieldError {
   fullName?: string;
@@ -46,7 +46,7 @@ export default function RegistrationForm({
   const [errors, setErrors] = useState<FieldError>({});
   const [showPassword, setShowPassword] = useState(false);
   const { handleGithubLogin } = githubLoginHook();
-  const { name, email, password, setName, setEmail, setPassword, handleSignUp, isPending } = signUpHook();
+  const { name, email, password, setName, setEmail, setPassword, handleSignUp, isPending } = useSignUp();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

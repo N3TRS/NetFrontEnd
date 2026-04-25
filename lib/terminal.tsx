@@ -131,8 +131,8 @@ export default function TerminalRunning() {
     if (testingTimeRemaining === null) return
 
     if (testingTimeRemaining === 0) {
-      handleClear()
-      return
+      const id = setTimeout(handleClear, 0)
+      return () => clearTimeout(id)
     }
 
     const timer = setInterval(() => {
