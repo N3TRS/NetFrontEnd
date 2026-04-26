@@ -22,7 +22,7 @@ interface TerminalState {
 
 export default function TerminalRunning() {
   const { projectUrl } = useProject()
-  const { submitBuild, streamLogs } = useNetOrchestrator()
+  const { detectJavaVersion, submitBuild, streamLogs } = useNetOrchestrator()
   const [terminalState, setTerminalState] = useState<TerminalState>({
     status: "idle",
     isRunning: false,
@@ -50,14 +50,21 @@ export default function TerminalRunning() {
       status: "running",
       isRunning: true,
       jobName: null,
-      logs: [],
+      logs: ["[INFO] Detectando versión de Java..."],
       startTime: new Date(),
       exitCode: undefined,
       errorMessage: null,
     })
 
     try {
-      const jobName = await submitBuild(projectUrl)
+      const javaVersion = await detectJavaVersion(projectUrl)
+
+      setTerminalState((prev) => ({
+        ...prev,
+        logs: [...prev.logs, `[INFO] Versión de Java detectada: ${javaVersion}`],
+      }))
+
+      const jobName = await submitBuild(projectUrl, javaVersion)
 
       setTerminalState((prev) => ({
         ...prev,
