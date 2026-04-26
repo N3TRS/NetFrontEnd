@@ -22,7 +22,7 @@ interface TerminalState {
 
 export default function TerminalRunning() {
   const { projectUrl } = useProject()
-  const { detectJavaVersion, submitBuild, streamLogs } = useNetOrchestrator()
+  const { detectJavaVersion, submitBuild, streamLogs, clearJob } = useNetOrchestrator()
   const [terminalState, setTerminalState] = useState<TerminalState>({
     status: "idle",
     isRunning: false,
@@ -36,8 +36,17 @@ export default function TerminalRunning() {
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
 
   const cancelStreamRef = useRef<(() => void) | null>(null)
+  const jobNameRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    jobNameRef.current = terminalState.jobName
+  }, [terminalState.jobName])
 
   const handleRun = useCallback(async () => {
+    if (jobNameRef.current) {
+      clearJob(jobNameRef.current)
+    }
+
     if (!projectUrl) {
       setTerminalState((prev) => ({
         ...prev,
@@ -114,9 +123,13 @@ export default function TerminalRunning() {
         errorMessage: errorMsg,
       }))
     }
-  }, [projectUrl, submitBuild, streamLogs])
+  }, [projectUrl, submitBuild, streamLogs, clearJob])
 
   const handleClear = useCallback(() => {
+    if (jobNameRef.current) {
+      clearJob(jobNameRef.current)
+    }
+
     cancelStreamRef.current?.()
     cancelStreamRef.current = null
     setTunnelUrl(null)
@@ -130,7 +143,7 @@ export default function TerminalRunning() {
       exitCode: undefined,
       errorMessage: null,
     })
-  }, [])
+  }, [clearJob])
 
   useEffect(() => {
     return () => {

@@ -39,11 +39,9 @@ export default function SelectProject({
     return result;
   }, [repos, search, onlyJava]);
 
-  const TEST_REPO_URL = "https://github.com/JuanTellez125/DOSW_Lab4_ACJJ"
-
   const handleSelect = (repo: GithubRepo) => {
     onRepoSelected?.(repo);
-    setProjectUrl(TEST_REPO_URL);
+    setProjectUrl(repo.html_url);
     route.push('running')
   };
 
