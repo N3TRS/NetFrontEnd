@@ -128,19 +128,25 @@ export const useNetOrchestrator = () => {
       })
 
       socket.on("disconnect", () => {
+        // Socket.IO will attempt reconnection automatically — do not terminate here
+      })
+
+      socket.on("reconnect", () => {
         if (!cancelled) {
-          if (socket!.connected === false && !cancelled) {
-            callbacks.onError("WebSocket connection lost")
-            callbacks.onComplete(-1)
-          }
+          socket!.emit("logs", jobName)
+        }
+      })
+
+      socket.on("reconnect_failed", () => {
+        if (!cancelled) {
+          callbacks.onError("WebSocket connection lost")
+          callbacks.onComplete(-1)
         }
       })
 
       socket.on("connect_error", (error: any) => {
         if (!cancelled) {
           console.error("WebSocket connection error:", error.message)
-          callbacks.onError(`Connection error: ${error.message}`)
-          callbacks.onComplete(-1)
         }
       })
     } catch (error) {
