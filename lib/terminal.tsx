@@ -33,6 +33,7 @@ export default function TerminalRunning() {
     errorMessage: null,
   })
   const [testingTimeRemaining, setTestingTimeRemaining] = useState<number | null>(null)
+  const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
 
   const cancelStreamRef = useRef<(() => void) | null>(null)
 
@@ -73,6 +74,8 @@ export default function TerminalRunning() {
 
       const cancel = streamLogs(jobName, {
         onLog: (line: string) => {
+          const match = line.match(/TUNNEL_URL:\s*(https:\/\/[^\s]+)/)
+          if (match) setTunnelUrl(match[1])
           setTerminalState((prev) => ({
             ...prev,
             logs: [...prev.logs, line],
@@ -116,6 +119,7 @@ export default function TerminalRunning() {
   const handleClear = useCallback(() => {
     cancelStreamRef.current?.()
     cancelStreamRef.current = null
+    setTunnelUrl(null)
 
     setTerminalState({
       status: "idle",
@@ -189,18 +193,32 @@ export default function TerminalRunning() {
       />
 
       {testingTimeRemaining !== null && (
-        <div className={`px-4 py-3 rounded-lg border text-sm font-jetbrains-mono ${testingTimeRemaining > 60
-          ? 'bg-blue-900 border-blue-700 text-blue-100'
-          : testingTimeRemaining > 0
-            ? 'bg-orange-900 border-orange-700 text-orange-100'
-            : 'bg-red-900 border-red-700 text-red-100'
-          }`}>
-          <p>
-            {testingTimeRemaining > 0
-              ? `Testing environment ready - ${Math.floor(testingTimeRemaining / 60)}:${String(testingTimeRemaining % 60).padStart(2, '0')} remaining`
-              : 'Testing environment expired - cleanup in progress'
-            }
-          </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className={`flex-1 px-4 py-3 rounded-lg border text-sm font-jetbrains-mono ${testingTimeRemaining > 60
+            ? 'bg-blue-900 border-blue-700 text-blue-100'
+            : testingTimeRemaining > 0
+              ? 'bg-orange-900 border-orange-700 text-orange-100'
+              : 'bg-red-900 border-red-700 text-red-100'
+            }`}>
+            <p>
+              {testingTimeRemaining > 0
+                ? `Testing environment ready - ${Math.floor(testingTimeRemaining / 60)}:${String(testingTimeRemaining % 60).padStart(2, '0')} remaining`
+                : 'Testing environment expired - cleanup in progress'
+              }
+            </p>
+          </div>
+
+          {tunnelUrl && (
+            <a
+              href={tunnelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 px-4 py-3 rounded-lg border bg-green-900 border-green-700 text-green-100 text-sm font-jetbrains-mono hover:bg-green-800 transition-colors"
+            >
+              <span className="opacity-60 text-xs block mb-0.5">PUBLIC URL</span>
+              {tunnelUrl}
+            </a>
+          )}
         </div>
       )}
 
