@@ -152,6 +152,15 @@ export default function TerminalRunning() {
   }, [])
 
   useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!jobNameRef.current) return
+      clearJob(jobNameRef.current)
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [clearJob])
+
+  useEffect(() => {
     if (testingTimeRemaining === null) return
 
     if (testingTimeRemaining === 0) {
@@ -205,6 +214,18 @@ export default function TerminalRunning() {
         exitCode={terminalState.exitCode}
       />
 
+      {tunnelUrl && (
+        <a
+          href={tunnelUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 px-4 py-3 rounded-lg border bg-green-900 border-green-700 text-green-100 text-sm font-jetbrains-mono hover:bg-green-800 transition-colors"
+        >
+          <span className="opacity-60 text-xs block mb-0.5">PUBLIC URL</span>
+          {tunnelUrl}
+        </a>
+      )}
+
       {testingTimeRemaining !== null && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className={`flex-1 px-4 py-3 rounded-lg border text-sm font-jetbrains-mono ${testingTimeRemaining > 60
@@ -220,18 +241,6 @@ export default function TerminalRunning() {
               }
             </p>
           </div>
-
-          {tunnelUrl && (
-            <a
-              href={tunnelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 px-4 py-3 rounded-lg border bg-green-900 border-green-700 text-green-100 text-sm font-jetbrains-mono hover:bg-green-800 transition-colors"
-            >
-              <span className="opacity-60 text-xs block mb-0.5">PUBLIC URL</span>
-              {tunnelUrl}
-            </a>
-          )}
         </div>
       )}
 
