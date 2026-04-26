@@ -65,6 +65,21 @@ export const useNetOrchestrator = () => {
     }
   }
 
+  const clearJob = async (jobName: string): Promise<void> => {
+    try {
+      await fetch(`${ORCHESTRATOR_BASE}/orchestrator/clear`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ jobName }),
+      })
+    } catch {
+      // fire-and-forget
+    }
+  }
+
   const streamLogs = (
     jobName: string,
     callbacks: StreamLogsCallbacks
@@ -147,5 +162,6 @@ export const useNetOrchestrator = () => {
     detectJavaVersion,
     submitBuild,
     streamLogs,
+    clearJob,
   }
 }
