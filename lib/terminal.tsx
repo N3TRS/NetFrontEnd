@@ -36,10 +36,17 @@ export default function TerminalRunning() {
   const [tunnelUrl, setTunnelUrl] = useState<string | null>(null)
 
   const cancelStreamRef = useRef<(() => void) | null>(null)
-  const jobNameRef = useRef<string | null>(null)
+  const jobNameRef = useRef<string | null>(
+    typeof window !== "undefined" ? sessionStorage.getItem("active_job_name") : null
+  )
 
   useEffect(() => {
     jobNameRef.current = terminalState.jobName
+    if (terminalState.jobName) {
+      sessionStorage.setItem("active_job_name", terminalState.jobName)
+    } else {
+      sessionStorage.removeItem("active_job_name")
+    }
   }, [terminalState.jobName])
 
   const handleRun = useCallback(async () => {
@@ -154,7 +161,7 @@ export default function TerminalRunning() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (!jobNameRef.current) return
-      clearJob(jobNameRef.current)
+      clearJob(jobNameRef.current, true)
     }
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)

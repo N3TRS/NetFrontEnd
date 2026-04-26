@@ -65,7 +65,7 @@ export const useNetOrchestrator = () => {
     }
   }
 
-  const clearJob = async (jobName: string): Promise<void> => {
+  const clearJob = async (jobName: string, keepalive = false): Promise<void> => {
     try {
       await fetch(`${ORCHESTRATOR_BASE}/orchestrator/clear`, {
         method: "POST",
@@ -74,6 +74,7 @@ export const useNetOrchestrator = () => {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({ jobName }),
+        keepalive,
       })
     } catch {
       // fire-and-forget
