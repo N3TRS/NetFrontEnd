@@ -1,6 +1,7 @@
 "use client"
 
 import { io, Socket } from "socket.io-client"
+import { useAuth } from "@/app/auth/_hooks/useAuth"
 
 const ORCHESTRATOR_BASE = process.env.NEXT_PUBLIC_URL_APIGATEWAY
 const ORCHESTRATOR_WS = process.env.NEXT_PUBLIC_URL_APIGATEWAY
@@ -10,6 +11,10 @@ interface SubmitBuildResponse {
   message: string
 }
 
+interface JavaVersionResponse {
+  javaVersion: string
+}
+
 interface StreamLogsCallbacks {
   onLog: (line: string) => void
   onError: (error: string) => void
@@ -17,14 +22,36 @@ interface StreamLogsCallbacks {
 }
 
 export const useNetOrchestrator = () => {
-  const submitBuild = async (repoUrl: string): Promise<string> => {
+  const { token } = useAuth()
+
+  const detectJavaVersion = async (repoUrl: string): Promise<string> => {
+    const response = await fetch(`${ORCHESTRATOR_BASE}/orchestrator/java`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({ REPO_URL: repoUrl }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err?.detail ?? `Failed to detect Java version: ${response.statusText}`)
+    }
+
+    const data: JavaVersionResponse = await response.json()
+    return data.javaVersion
+  }
+
+  const submitBuild = async (repoUrl: string, javaVersion: string): Promise<string> => {
     try {
       const response = await fetch(`${ORCHESTRATOR_BASE}/orchestrator/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ REPO_URL: repoUrl }),
+        body: JSON.stringify({ REPO_URL: repoUrl, JAVA_VERSION: javaVersion }),
       })
 
       if (!response.ok) {
@@ -47,6 +74,7 @@ export const useNetOrchestrator = () => {
 
     try {
       socket = io(ORCHESTRATOR_WS, {
+        auth: { token },
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
@@ -115,6 +143,7 @@ export const useNetOrchestrator = () => {
   }
 
   return {
+    detectJavaVersion,
     submitBuild,
     streamLogs,
   }
