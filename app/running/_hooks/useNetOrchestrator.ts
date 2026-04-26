@@ -74,6 +74,7 @@ export const useNetOrchestrator = () => {
 
     try {
       socket = io(ORCHESTRATOR_WS, {
+        path: '/orchestrator/socket.io',
         auth: { token },
         reconnection: true,
         reconnectionDelay: 1000,
