@@ -8,6 +8,7 @@ interface TerminalControlsProps {
   isRunning: boolean
   onRun: () => void
   onClear: () => void
+  onStop: () => void
 }
 
 export default function TerminalControls({
@@ -15,6 +16,7 @@ export default function TerminalControls({
   isRunning,
   onRun,
   onClear,
+  onStop,
 }: TerminalControlsProps) {
   const { baseStyles, textSecondary, textPrimary } = useTerminalStyles()
   const { runButtonStyles, clearButtonStyles } = useTerminalButtonStyles()
@@ -71,25 +73,29 @@ export default function TerminalControls({
           )}
         </button>
 
-        <button
-          onClick={onClear}
-          disabled={isRunning}
-          className="px-4 sm:px-6 py-2 rounded font-jetbrains-mono font-semibold text-xs sm:text-sm transition-all focus-ring touch-action-manipulation"
-          style={isRunning ? clearButtonStyles.disabled : clearButtonStyles.default}
-          onMouseEnter={(e) => {
-            if (!isRunning) {
-              e.currentTarget.style.backgroundColor = clearButtonStyles.hover.backgroundColor
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isRunning) {
-              e.currentTarget.style.backgroundColor = clearButtonStyles.default.backgroundColor
-            }
-          }}
-          aria-label="Limpiar consola"
-        >
-          LIMPIAR CONSOLA
-        </button>
+        {isRunning ? (
+          <button
+            onClick={onStop}
+            className="px-4 sm:px-6 py-2 rounded font-jetbrains-mono font-semibold text-xs sm:text-sm transition-all focus-ring touch-action-manipulation"
+            style={{ backgroundColor: "#7f1d1d", color: "#fecaca", border: "1px solid #991b1b" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#991b1b" }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#7f1d1d" }}
+            aria-label="Detener ejecución"
+          >
+            DETENER
+          </button>
+        ) : (
+          <button
+            onClick={onClear}
+            className="px-4 sm:px-6 py-2 rounded font-jetbrains-mono font-semibold text-xs sm:text-sm transition-all focus-ring touch-action-manipulation"
+            style={clearButtonStyles.default}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = clearButtonStyles.hover.backgroundColor }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = clearButtonStyles.default.backgroundColor }}
+            aria-label="Limpiar consola"
+          >
+            LIMPIAR CONSOLA
+          </button>
+        )}
       </div>
     </div>
   )

@@ -152,6 +152,23 @@ export default function TerminalRunning() {
     })
   }, [clearJob])
 
+  const handleStop = useCallback(() => {
+    if (jobNameRef.current) {
+      clearJob(jobNameRef.current)
+    }
+
+    cancelStreamRef.current?.()
+    cancelStreamRef.current = null
+    setTunnelUrl(null)
+
+    setTerminalState((prev) => ({
+      ...prev,
+      status: "failed",
+      isRunning: false,
+      errorMessage: null,
+    }))
+  }, [clearJob])
+
   useEffect(() => {
     return () => {
       cancelStreamRef.current?.()
@@ -209,6 +226,7 @@ export default function TerminalRunning() {
         isRunning={terminalState.isRunning}
         onRun={handleRun}
         onClear={handleClear}
+        onStop={handleStop}
       />
 
       <TerminalOutput logs={terminalState.logs} />
