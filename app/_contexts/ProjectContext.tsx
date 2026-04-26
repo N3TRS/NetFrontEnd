@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, ReactNode } from "react"
 
+const SESSION_KEY = "selected_project_url"
+
 interface ProjectContextType {
   projectUrl: string | null
   setProjectUrl: (url: string) => void
@@ -11,13 +13,18 @@ interface ProjectContextType {
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
-  const [projectUrl, setProjectUrlState] = useState<string | null>(null)
+  const [projectUrl, setProjectUrlState] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null
+    return sessionStorage.getItem(SESSION_KEY)
+  })
 
   const setProjectUrl = (url: string) => {
+    sessionStorage.setItem(SESSION_KEY, url)
     setProjectUrlState(url)
   }
 
   const clearProjectUrl = () => {
+    sessionStorage.removeItem(SESSION_KEY)
     setProjectUrlState(null)
   }
 
