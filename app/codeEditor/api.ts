@@ -143,7 +143,7 @@ export async function analyzeCode(
   prompt: string,
   code: string,
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${SESSIONS_API_BASE}/analyze`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt, code }),
