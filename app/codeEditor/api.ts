@@ -1,7 +1,7 @@
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
 
 const SESSIONS_API_BASE =
-  process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
+  process.env.NEXT_PUBLIC_URL_SESSIONS || 'http://localhost:3002';
 
 
 export class HttpError extends Error {

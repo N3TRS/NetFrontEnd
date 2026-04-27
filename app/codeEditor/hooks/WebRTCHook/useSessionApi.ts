@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_URL_APIGATEWAY || "http://localhost:3002/api";
+  process.env.NEXT_PUBLIC_URL_SESSIONS || "http://localhost:3002";
 
 /**
  * Session data returned from API
