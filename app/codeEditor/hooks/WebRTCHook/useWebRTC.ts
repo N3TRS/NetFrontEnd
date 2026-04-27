@@ -55,7 +55,7 @@ export const useWebRTC = (userId: string) => {
   useEffect(() => {
     if (!userId) return;
 
-    const CALLS_URL = process.env.NEXT_PUBLIC_URL_APIGATEWAY || 'http://localhost:3002';
+    const CALLS_URL = process.env.NEXT_PUBLIC_URL_CALL || 'http://localhost:3003';
     const socket = io(CALLS_URL, {
       path: '/calls/socket.io',
       transports: ['websocket'],
@@ -249,7 +249,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/${callId}/accept`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -285,7 +285,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/${callId}/reject`, {
+      await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -309,7 +309,7 @@ export const useWebRTC = (userId: string) => {
 
     if (callId && socketRef.current) {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/${callId}/end`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/end`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -329,7 +329,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALLS}/calls/create`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
