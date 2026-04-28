@@ -90,7 +90,7 @@ const App = () => {
   const canvasRef = useRef<MonacoCanvasHandle>(null);
   const { isInCall, isIncomingCall } = useCallStore();
   const userEmail = user?.email;
-  const { startCall, acceptCall, rejectCall, endCall } = useWebRTC(userEmail || '');
+  const { startCall, acceptCall, rejectCall, endCall } = useWebRTC(userEmail || '', token);
 
   useSessionSocket({
     token,
