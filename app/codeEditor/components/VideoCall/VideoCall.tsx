@@ -162,7 +162,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
-  }, [localStream, isMinimized]);
+  }, [localStream, isMinimized, isVideoOff]);
 
   // Remote videos
   useEffect(() => {
