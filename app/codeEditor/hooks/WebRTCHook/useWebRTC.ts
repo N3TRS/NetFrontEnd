@@ -211,8 +211,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
 
     pc.ontrack = (event) => {
-      const [remoteStream] = event.streams;
-      addRemoteStream(remoteUserId, remoteStream);
+      const remoteStream = event.streams[0];
+      if (remoteStream) addRemoteStream(remoteUserId, remoteStream);
     };
 
     pc.onconnectionstatechange = () => {
@@ -250,6 +250,15 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   const handleOffer = async (remoteUserId: string, offer: RTCSessionDescriptionInit) => {
     try {
+      // Close any stale non-connected PC so the new offer creates a fresh connection.
+      // A 'connecting' PC from a failed previous attempt would block setRemoteDescription.
+      const stale = peerConnectionsRef.current.get(remoteUserId);
+      if (stale && stale.connectionState !== 'connected') {
+        stale.close();
+        peerConnectionsRef.current.delete(remoteUserId);
+        pendingCandidatesRef.current.delete(remoteUserId);
+      }
+
       const pc = createPeerConnection(remoteUserId);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       await flushPendingCandidates(remoteUserId, pc);
