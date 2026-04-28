@@ -306,11 +306,20 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     if (callId) {
       try {
-        await fetch(`${CALLS_URL}/calls/${callId}/leave`, {
+        const response = await fetch(`${CALLS_URL}/calls/${callId}/leave`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ userId }),
         });
+
+        if (response.ok) {
+          const rawData: Record<string, unknown> = await response.json();
+          const call = normalizeCall(rawData);
+          // If the call is still active, show the rejoin button
+          if (call.status === 'ACCEPTED') {
+            useCallStore.getState().setJoinableCall(call);
+          }
+        }
       } catch (error) {
         console.error('Error leaving call:', error);
       }
