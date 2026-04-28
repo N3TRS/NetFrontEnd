@@ -7,10 +7,34 @@ interface WebRTCConfig {
   iceServers: RTCIceServer[];
 }
 
+// TURN relay: required when peers sit behind symmetric NAT / restrictive firewalls.
+// Production should set NEXT_PUBLIC_TURN_URL/USERNAME/CREDENTIAL to a managed TURN
+// (Metered.ca, Twilio NTS, self-hosted coturn). The OpenRelay fallback below works
+// for dev but is rate-limited and not suitable for production.
+const TURN_URL = process.env.NEXT_PUBLIC_TURN_URL;
+const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME;
+const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
+
+const TURN_SERVERS: RTCIceServer[] =
+  TURN_URL && TURN_USERNAME && TURN_CREDENTIAL
+    ? [{ urls: TURN_URL, username: TURN_USERNAME, credential: TURN_CREDENTIAL }]
+    : [
+        {
+          urls: [
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp',
+          ],
+          username: 'openrelayproject',
+          credential: 'openrelayproject',
+        },
+      ];
+
 const DEFAULT_CONFIG: WebRTCConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    ...TURN_SERVERS,
   ],
 };
 
@@ -31,6 +55,10 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
   const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
+  // Track which side originated the offer for each PC. Only the offerer attempts ICE restart
+  // to avoid signaling glare (both sides re-offering at once).
+  const offererRef = useRef<Map<string, boolean>>(new Map());
+  const iceRestartAttemptsRef = useRef<Set<string>>(new Set());
 
   const isCall = (value: unknown): value is Call => {
     if (!value || typeof value !== 'object') return false;
@@ -228,11 +256,33 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
 
     pc.onconnectionstatechange = () => {
-      // 'disconnected' is transient and self-heals; only tear down on terminal states.
-      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      // 'disconnected' and 'failed' are recoverable via ICE restart (see oniceconnectionstatechange).
+      // Only tear down when the PC is definitively closed.
+      if (pc.connectionState === 'closed') {
         removeRemoteStream(remoteUserId);
         peerConnectionsRef.current.delete(remoteUserId);
         pendingCandidatesRef.current.delete(remoteUserId);
+        offererRef.current.delete(remoteUserId);
+        iceRestartAttemptsRef.current.delete(remoteUserId);
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (
+        pc.iceConnectionState === 'failed' &&
+        offererRef.current.get(remoteUserId) === true &&
+        !iceRestartAttemptsRef.current.has(remoteUserId)
+      ) {
+        iceRestartAttemptsRef.current.add(remoteUserId);
+        void (async () => {
+          try {
+            const offer = await pc.createOffer({ iceRestart: true });
+            await pc.setLocalDescription(offer);
+            socketRef.current?.emit('webrtc:offer', { to: remoteUserId, signal: offer });
+          } catch (error) {
+            console.error('ICE restart failed:', error);
+          }
+        })();
       }
     };
 
@@ -243,6 +293,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const createOffer = async (remoteUserId: string) => {
     try {
       const pc = createPeerConnection(remoteUserId);
+      offererRef.current.set(remoteUserId, true);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       if (socketRef.current) {
@@ -263,16 +314,22 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   const handleOffer = async (remoteUserId: string, offer: RTCSessionDescriptionInit) => {
     try {
-      // Close any stale non-connected PC so the new offer creates a fresh connection.
-      // A 'connecting' PC from a failed previous attempt would block setRemoteDescription.
-      const stale = peerConnectionsRef.current.get(remoteUserId);
-      if (stale && stale.connectionState !== 'connected') {
-        stale.close();
+      // Reuse existing PC for ICE-restart re-offers (signalingState === 'stable' means it's settled).
+      // Only close a stale PC when there's no existing healthy session to preserve.
+      const existing = peerConnectionsRef.current.get(remoteUserId);
+      const isRenegotiation =
+        existing && existing.connectionState !== 'closed' && existing.signalingState === 'stable';
+
+      if (existing && !isRenegotiation && existing.connectionState !== 'connected') {
+        existing.close();
         peerConnectionsRef.current.delete(remoteUserId);
         pendingCandidatesRef.current.delete(remoteUserId);
       }
 
       const pc = createPeerConnection(remoteUserId);
+      if (!offererRef.current.has(remoteUserId)) {
+        offererRef.current.set(remoteUserId, false);
+      }
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
       await flushPendingCandidates(remoteUserId, pc);
       const answer = await pc.createAnswer();
