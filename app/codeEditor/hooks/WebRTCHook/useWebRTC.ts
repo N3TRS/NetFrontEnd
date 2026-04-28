@@ -22,12 +22,15 @@ function normalizeCall(raw: Record<string, unknown>): Call {
     ...raw,
     id: (raw.id ?? raw.callId) as string,
     activeParticipants: (raw.activeParticipants as string[]) ?? [],
+    acceptedUsers: (raw.acceptedUsers as string[]) ?? [],
+    rejectedUsers: (raw.rejectedUsers as string[]) ?? [],
   } as Call;
 }
 
 export const useWebRTC = (userId: string, token: string | null) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
+  const pendingCandidatesRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
 
   const isCall = (value: unknown): value is Call => {
     if (!value || typeof value !== 'object') return false;
@@ -157,7 +160,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio,
-          video: { width: 1280, height: 720 },
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
         });
         setLocalStream(stream);
         return stream;
@@ -216,6 +219,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
         removeRemoteStream(remoteUserId);
         peerConnectionsRef.current.delete(remoteUserId);
+        pendingCandidatesRef.current.delete(remoteUserId);
       }
     };
 
@@ -236,10 +240,19 @@ export const useWebRTC = (userId: string, token: string | null) => {
     }
   };
 
+  const flushPendingCandidates = async (remoteUserId: string, pc: RTCPeerConnection) => {
+    const queued = pendingCandidatesRef.current.get(remoteUserId) ?? [];
+    for (const c of queued) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* drop stale */ }
+    }
+    pendingCandidatesRef.current.delete(remoteUserId);
+  };
+
   const handleOffer = async (remoteUserId: string, offer: RTCSessionDescriptionInit) => {
     try {
       const pc = createPeerConnection(remoteUserId);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      await flushPendingCandidates(remoteUserId, pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       if (socketRef.current) {
@@ -253,7 +266,9 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const handleAnswer = async (remoteUserId: string, answer: RTCSessionDescriptionInit) => {
     try {
       const pc = peerConnectionsRef.current.get(remoteUserId);
-      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      if (!pc) return;
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      await flushPendingCandidates(remoteUserId, pc);
     } catch (error) {
       console.error('Error handling answer:', error);
     }
@@ -262,7 +277,12 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const handleIceCandidate = async (remoteUserId: string, candidate: RTCIceCandidateInit) => {
     try {
       const pc = peerConnectionsRef.current.get(remoteUserId);
-      if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      if (pc && pc.remoteDescription) {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } else {
+        const queue = pendingCandidatesRef.current.get(remoteUserId) ?? [];
+        pendingCandidatesRef.current.set(remoteUserId, [...queue, candidate]);
+      }
     } catch (error) {
       console.error('Error handling ICE candidate:', error);
     }
