@@ -88,9 +88,9 @@ const App = () => {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
-  const { isInCall, isIncomingCall } = useCallStore();
+  const { isInCall, isIncomingCall, joinableCall } = useCallStore();
   const userEmail = user?.email;
-  const { startCall, acceptCall, rejectCall, endCall } = useWebRTC(userEmail || '', token);
+  const { startCall, acceptCall, rejectCall, leaveCall, joinCall } = useWebRTC(userEmail || '', token);
 
   useSessionSocket({
     token,
@@ -176,7 +176,8 @@ const App = () => {
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
           onToggleCall={() => setCallModalOpen(true)}
-
+          joinableCall={joinableCall}
+          onJoinCall={joinCall}
         />
 
         {aiPanelOpen && (
@@ -230,7 +231,7 @@ const App = () => {
         sessionId={sessionId}
         token={token}
       />
-      {isInCall && <VideoCall onEndCall={endCall} />}
+      {isInCall && <VideoCall onEndCall={leaveCall} />}
       {isIncomingCall && (
         <IncomingCallDialog
           onAcceptCall={acceptCall}
