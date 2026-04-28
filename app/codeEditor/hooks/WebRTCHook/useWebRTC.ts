@@ -7,34 +7,10 @@ interface WebRTCConfig {
   iceServers: RTCIceServer[];
 }
 
-// TURN relay: required when peers sit behind symmetric NAT / restrictive firewalls.
-// Production should set NEXT_PUBLIC_TURN_URL/USERNAME/CREDENTIAL to a managed TURN
-// (Metered.ca, Twilio NTS, self-hosted coturn). The OpenRelay fallback below works
-// for dev but is rate-limited and not suitable for production.
-const TURN_URL = process.env.NEXT_PUBLIC_TURN_URL;
-const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME;
-const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;
-
-const TURN_SERVERS: RTCIceServer[] =
-  TURN_URL && TURN_USERNAME && TURN_CREDENTIAL
-    ? [{ urls: TURN_URL, username: TURN_USERNAME, credential: TURN_CREDENTIAL }]
-    : [
-        {
-          urls: [
-            'turn:openrelay.metered.ca:80',
-            'turn:openrelay.metered.ca:443',
-            'turn:openrelay.metered.ca:443?transport=tcp',
-          ],
-          username: 'openrelayproject',
-          credential: 'openrelayproject',
-        },
-      ];
-
 const DEFAULT_CONFIG: WebRTCConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    ...TURN_SERVERS,
   ],
 };
 
@@ -179,44 +155,33 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
   }, [userId]);
 
-  // Acquire local media for the call. Tracks are created DISABLED so the user
-  // joins muted with camera off — peers see/hear nothing until the user toggles.
-  // Capture stays cold; senders are wired up on PC create so toggling later is
-  // a simple track.enabled flip with no renegotiation.
-  const getUserMedia = async (): Promise<MediaStream> => {
-    const { setIsMuted, setIsVideoOff } = useCallStore.getState();
+  // Acquire local media. Tracks are enabled by default — user joins with mic + cam ON.
+  // Progressive fallback: video+audio → audio only → empty stream.
+  const getUserMedia = async (audio = true, video = true): Promise<MediaStream> => {
+    const { setIsVideoOff } = useCallStore.getState();
 
-    const disableAll = (stream: MediaStream) => {
-      stream.getTracks().forEach((t) => { t.enabled = false; });
-    };
+    if (video) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio,
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+        setLocalStream(stream);
+        return stream;
+      } catch { /* no camera, fall through */ }
+    }
 
-    // 1. Try video + audio
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      disableAll(stream);
-      setLocalStream(stream);
-      setIsMuted(true);
-      setIsVideoOff(true);
-      return stream;
-    } catch { /* no camera, fall through */ }
+    if (audio) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
+        setIsVideoOff(true);
+        return stream;
+      } catch { /* no microphone either, fall through */ }
+    }
 
-    // 2. Try audio only
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      disableAll(stream);
-      setLocalStream(stream);
-      setIsMuted(true);
-      setIsVideoOff(true);
-      return stream;
-    } catch { /* no microphone either, fall through */ }
-
-    // 3. No devices — join with empty stream (recvonly transceivers added later)
     const empty = new MediaStream();
     setLocalStream(empty);
-    setIsMuted(true);
     setIsVideoOff(true);
     return empty;
   };
@@ -378,7 +343,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       });
       if (!response.ok) throw new Error('Failed to accept call');
 
-      await getUserMedia();
+      await getUserMedia(true, true);
 
       setIsInCall(true);
       setIsIncomingCall(false);
@@ -451,7 +416,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const joinCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
     try {
-      await getUserMedia();
+      await getUserMedia(true, true);
 
       const response = await fetch(`${CALLS_URL}/calls/${callId}/join`, {
         method: 'POST',
@@ -526,7 +491,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const call = normalizeCall(rawData);
       setCurrentCall(call);
 
-      await getUserMedia();
+      await getUserMedia(true, true);
 
       setIsInCall(true);
     } catch (error) {
