@@ -1,8 +1,9 @@
 "use client";
 
-import { Folder, Phone, Sparkles, Terminal } from "lucide-react";
+import { Folder, Phone, PhoneIncoming, Sparkles, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { Call } from "./_stores/callStore";
 
 interface EditorSidebarProps {
   terminalOpen: boolean;
@@ -10,6 +11,8 @@ interface EditorSidebarProps {
   aiPanelOpen: boolean;
   onToggleCall: () => void;
   onToggleAiPanel: () => void;
+  joinableCall?: Call | null;
+  onJoinCall?: (callId: string) => void;
 }
 
 export function EditorSidebar({
@@ -18,6 +21,8 @@ export function EditorSidebar({
   onToggleCall,
   aiPanelOpen,
   onToggleAiPanel,
+  joinableCall,
+  onJoinCall,
 }: EditorSidebarProps) {
   return (
     <aside
@@ -34,16 +39,35 @@ export function EditorSidebar({
         <Folder className="size-4" aria-hidden />
       </Button>
 
-      <Button
-        size="icon"
-        variant="ghost"
-        onClick={onToggleCall}
-        className="cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white"
-        title="Voice call"
-        aria-label="Voice call"
-      >
-        <Phone className="size-4" aria-hidden />
-      </Button>
+      {joinableCall ? (
+        <div className="relative">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onJoinCall?.(joinableCall.id)}
+            className="cursor-pointer text-green-400 hover:bg-green-500/10 hover:text-green-300 animate-pulse"
+            title="Unirse a llamada activa"
+            aria-label="Unirse a llamada activa"
+          >
+            <PhoneIncoming className="size-4" aria-hidden />
+          </Button>
+          <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+          </span>
+        </div>
+      ) : (
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onToggleCall}
+          className="cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white"
+          title="Iniciar llamada"
+          aria-label="Iniciar llamada"
+        >
+          <Phone className="size-4" aria-hidden />
+        </Button>
+      )}
 
       <Button
         size="icon"

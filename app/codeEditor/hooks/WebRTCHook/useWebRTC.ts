@@ -16,30 +16,29 @@ const DEFAULT_CONFIG: WebRTCConfig = {
 
 const CALLS_URL = process.env.NEXT_PUBLIC_URL_CALL ?? '';
 
+// Normalize call response: backend returns { callId, ... } but we need { id, ... }
+function normalizeCall(raw: Record<string, unknown>): Call {
+  return {
+    ...raw,
+    id: (raw.id ?? raw.callId) as string,
+    activeParticipants: (raw.activeParticipants as string[]) ?? [],
+  } as Call;
+}
+
 export const useWebRTC = (userId: string, token: string | null) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
 
   const isCall = (value: unknown): value is Call => {
-    if (!value || typeof value !== 'object') {
-      return false;
-    }
-
-    return 'id' in value && 'callerId' in value && 'participants' in value;
+    if (!value || typeof value !== 'object') return false;
+    return 'callerId' in value && 'participants' in value;
   };
 
   const getCallFromPayload = (payload: unknown): Call | null => {
-    if (!payload || typeof payload !== 'object') {
-      return null;
-    }
-
-    const callCandidate = 'call' in payload ? payload.call : payload;
-
-    if (!isCall(callCandidate)) {
-      return null;
-    }
-
-    return callCandidate;
+    if (!payload || typeof payload !== 'object') return null;
+    const raw = ('call' in payload ? (payload as Record<string, unknown>).call : payload) as Record<string, unknown>;
+    if (!isCall(raw)) return null;
+    return normalizeCall(raw);
   };
 
   const {
@@ -47,11 +46,10 @@ export const useWebRTC = (userId: string, token: string | null) => {
     addRemoteStream,
     removeRemoteStream,
     setCurrentCall,
+    setJoinableCall,
     setIsInCall,
     setIsIncomingCall,
     resetCall,
-    currentCall,
-    isInCall,
   } = useCallStore();
 
   // Initialize socket connection
@@ -70,42 +68,67 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     socket.on('disconnect', () => { });
 
-    // Handle incoming call
+    // Incoming call (user was in the original participants list)
     socket.on('incoming-call', (payload: unknown) => {
       const call = getCallFromPayload(payload);
-
-      if (!call) {
-        console.warn('Incoming call payload missing call data:', payload);
-        return;
-      }
-
+      if (!call) return;
       setCurrentCall(call);
       setIsIncomingCall(true);
-      // NOTE: We do NOT request media here - only when accepting
     });
 
-    // Handle call accepted — backend sends Call object directly (not wrapped)
-    socket.on('call-accepted', (data: Call) => {
-      setCurrentCall(data);
-      // Acceptor creates offers to everyone after getUserMedia — don't create offers here
-      // to avoid glare (both sides creating offers simultaneously)
+    // Someone accepted — update call state
+    socket.on('call-accepted', (data: unknown) => {
+      const call = getCallFromPayload(data);
+      if (call) setCurrentCall(call);
     });
 
-    // Handle call rejected
-    socket.on('call-rejected', (data: { call: Call; userId: string }) => {
-      setCurrentCall(data.call);
+    // Someone rejected — update call state
+    socket.on('call-rejected', (data: unknown) => {
+      const call = getCallFromPayload(data);
+      if (call) setCurrentCall(call);
     });
 
-    // Handle call ended
+    // The call was force-ended for everyone
     socket.on('call-ended', () => {
-      endCall();
+      peerConnectionsRef.current.forEach((pc) => pc.close());
+      peerConnectionsRef.current.clear();
+      resetCall();
     });
 
     socket.on('call-missed', () => {
       resetCall();
     });
 
-    // WebRTC Signaling — backend uses { from, signal } for all three events
+    // A participant left — remove their stream/PC, update call state
+    socket.on('user-left', (data: { call: unknown; userId: string }) => {
+      const call = getCallFromPayload(data.call);
+      if (call) setCurrentCall(call);
+
+      const leftUserId = data.userId;
+      removeRemoteStream(leftUserId);
+      const pc = peerConnectionsRef.current.get(leftUserId);
+      if (pc) {
+        pc.close();
+        peerConnectionsRef.current.delete(leftUserId);
+      }
+    });
+
+    // A new participant joined — update call state; they will offer to us
+    socket.on('user-joined', (data: { call: unknown; userId: string }) => {
+      const call = getCallFromPayload(data.call);
+      if (call) setCurrentCall(call);
+      // The new joiner creates WebRTC offers to us; we just wait and handle the offer
+    });
+
+    // There is already an active call in progress (late joiner scenario)
+    socket.on('call-in-progress', (payload: unknown) => {
+      const call = getCallFromPayload(payload);
+      if (call && !useCallStore.getState().isInCall) {
+        setJoinableCall(call);
+      }
+    });
+
+    // WebRTC Signaling
     socket.on('webrtc:offer', async (data: { from: string; signal: RTCSessionDescriptionInit }) => {
       await handleOffer(data.from, data.signal);
     });
@@ -125,14 +148,13 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
   }, [userId]);
 
-  // Get user media (ONLY called when accepting call)
+  // Get user media (only called when accepting/joining call)
   const getUserMedia = async (audio = true, video = true): Promise<MediaStream | null> => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio,
         video: video ? { width: 1280, height: 720 } : false,
       });
-
       setLocalStream(stream);
       return stream;
     } catch (error) {
@@ -143,7 +165,6 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   // Create peer connection
   const createPeerConnection = (remoteUserId: string): RTCPeerConnection => {
-    // Reuse existing PC to avoid overwriting established connections
     const existing = peerConnectionsRef.current.get(remoteUserId);
     if (existing && existing.connectionState !== 'closed' && existing.connectionState !== 'failed') {
       return existing;
@@ -151,15 +172,11 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     const pc = new RTCPeerConnection(DEFAULT_CONFIG);
 
-    // Add local stream tracks
     const localStream = useCallStore.getState().localStream;
     if (localStream) {
-      localStream.getTracks().forEach(track => {
-        pc.addTrack(track, localStream);
-      });
+      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     }
 
-    // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate && socketRef.current) {
         socketRef.current.emit('webrtc:ice-candidate', {
@@ -169,13 +186,11 @@ export const useWebRTC = (userId: string, token: string | null) => {
       }
     };
 
-    // Handle remote stream
     pc.ontrack = (event) => {
       const [remoteStream] = event.streams;
       addRemoteStream(remoteUserId, remoteStream);
     };
 
-    // Handle connection state changes
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
         removeRemoteStream(remoteUserId);
@@ -187,195 +202,189 @@ export const useWebRTC = (userId: string, token: string | null) => {
     return pc;
   };
 
-  // Create and send offer
   const createOffer = async (remoteUserId: string) => {
     try {
       const pc = createPeerConnection(remoteUserId);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-
       if (socketRef.current) {
-        socketRef.current.emit('webrtc:offer', {
-          to: remoteUserId,
-          signal: offer,
-        });
+        socketRef.current.emit('webrtc:offer', { to: remoteUserId, signal: offer });
       }
     } catch (error) {
       console.error('Error creating offer:', error);
     }
   };
 
-  // Handle incoming offer
   const handleOffer = async (remoteUserId: string, offer: RTCSessionDescriptionInit) => {
     try {
       const pc = createPeerConnection(remoteUserId);
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-
       if (socketRef.current) {
-        socketRef.current.emit('webrtc:answer', {
-          to: remoteUserId,
-          signal: answer,
-        });
+        socketRef.current.emit('webrtc:answer', { to: remoteUserId, signal: answer });
       }
     } catch (error) {
       console.error('Error handling offer:', error);
     }
   };
 
-  // Handle incoming answer
   const handleAnswer = async (remoteUserId: string, answer: RTCSessionDescriptionInit) => {
     try {
       const pc = peerConnectionsRef.current.get(remoteUserId);
-      if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      }
+      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
     } catch (error) {
       console.error('Error handling answer:', error);
     }
   };
 
-  // Handle ICE candidate
   const handleIceCandidate = async (remoteUserId: string, candidate: RTCIceCandidateInit) => {
     try {
       const pc = peerConnectionsRef.current.get(remoteUserId);
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate));
-      }
+      if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (error) {
       console.error('Error handling ICE candidate:', error);
     }
   };
 
-  // Accept call 
+  // Accept an incoming call
   const acceptCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
-
     try {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId }),
       });
-
       if (!response.ok) throw new Error('Failed to accept call');
 
       const stream = await getUserMedia(true, true);
-
-      if (!stream) {
-        throw new Error('Could not access media devices');
-      }
+      if (!stream) throw new Error('Could not access media devices');
 
       setIsInCall(true);
       setIsIncomingCall(false);
 
-      // Use fresh store state — closure currentCall may be stale
       const freshCall = useCallStore.getState().currentCall;
       if (freshCall) {
-        // Create offer to the caller
-        if (freshCall.callerId !== userId) {
-          await createOffer(freshCall.callerId);
-        }
-        // Create offers to any already-accepted participants
+        if (freshCall.callerId !== userId) await createOffer(freshCall.callerId);
         for (const participantId of freshCall.acceptedUsers) {
-          if (participantId !== userId) {
-            await createOffer(participantId);
-          }
+          if (participantId !== userId) await createOffer(participantId);
         }
       }
-
     } catch (error) {
       console.error('Error accepting call:', error);
       resetCall();
     }
-  }, [userId]);
+  }, [userId, token]);
 
   const rejectCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
-
     try {
       await fetch(`${CALLS_URL}/calls/${callId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId }),
       });
-
       resetCall();
     } catch (error) {
       console.error('Error rejecting call:', error);
     }
-  }, [userId]);
-  //End call
-  const endCall = useCallback(async () => {
-    const callId = currentCall?.id;
+  }, [userId, token]);
 
-    peerConnectionsRef.current.forEach((pc) => {
-      pc.close();
-    });
+  // Leave the call (caller or participant hangs up — call continues for others if ≥2 remain)
+  const leaveCall = useCallback(async () => {
+    const callId = useCallStore.getState().currentCall?.id;
+
+    peerConnectionsRef.current.forEach((pc) => pc.close());
     peerConnectionsRef.current.clear();
+
+    if (socketRef.current && callId) {
+      socketRef.current.emit('leave-call', { callId, userId });
+    }
 
     resetCall();
 
-    if (callId && socketRef.current) {
+    if (callId) {
       try {
-        const response = await fetch(`${CALLS_URL}/calls/${callId}/end`, {
+        await fetch(`${CALLS_URL}/calls/${callId}/leave`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ userId }),
         });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Failed to end call on server:', response.status, errorText);
-        }
       } catch (error) {
-        console.error('Error ending call:', error);
+        console.error('Error leaving call:', error);
       }
     }
-  }, [currentCall, userId, resetCall]);
+  }, [userId, token, resetCall]);
+
+  // Join an already-active call (late joiner)
+  const joinCall = useCallback(async (callId: string) => {
+    if (!socketRef.current) return;
+    try {
+      const stream = await getUserMedia(true, true);
+      if (!stream) throw new Error('Could not access media devices');
+
+      const response = await fetch(`${CALLS_URL}/calls/${callId}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId }),
+      });
+      if (!response.ok) throw new Error('Failed to join call');
+
+      const callData: Record<string, unknown> = await response.json();
+      const call = normalizeCall(callData);
+      setCurrentCall(call);
+      setJoinableCall(null);
+      setIsInCall(true);
+
+      socketRef.current.emit('join-call', { callId, userId });
+
+      // Create offers to all current active participants
+      for (const participantId of call.activeParticipants) {
+        if (participantId !== userId) await createOffer(participantId);
+      }
+    } catch (error) {
+      console.error('Error joining call:', error);
+      resetCall();
+    }
+  }, [userId, token, resetCall]);
 
   // Start a new call
   const startCall = useCallback(async (participantIds: string[]) => {
     if (!socketRef.current) return;
-    if (isInCall) return;
+    if (useCallStore.getState().isInCall) return;
 
     try {
       const response = await fetch(`${CALLS_URL}/calls/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          callerId: userId,
-          participants: participantIds,
-        }),
+        body: JSON.stringify({ callerId: userId, participants: participantIds }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Server error:', response.status, errorData);
-        throw new Error(errorData.message || `Failed to create call: ${response.status}`);
+        throw new Error((errorData as { message?: string }).message || `Failed to create call: ${response.status}`);
       }
 
-      const { call } = await response.json();
+      const rawData: Record<string, unknown> = await response.json();
+      const call = normalizeCall(rawData);
       setCurrentCall(call);
 
       const stream = await getUserMedia(true, true);
-
-      if (!stream) {
-        throw new Error('Could not access media devices');
-      }
+      if (!stream) throw new Error('Could not access media devices');
 
       setIsInCall(true);
     } catch (error) {
       console.error('Error starting call:', error);
       resetCall();
     }
-  }, [userId, currentCall, isInCall]);
+  }, [userId, token]);
 
   return {
     acceptCall,
     rejectCall,
-    endCall,
+    leaveCall,
+    joinCall,
     startCall,
   };
 };

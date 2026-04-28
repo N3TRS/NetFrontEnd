@@ -9,9 +9,11 @@ export enum CallStatus {
 }
 
 export interface Call {
+  callId?: string;
   id: string;
   callerId: string;
   participants: string[];
+  activeParticipants: string[];
   acceptedUsers: string[];
   rejectedUsers: string[];
   status: CallStatus;
@@ -28,19 +30,21 @@ interface RemoteStreamEntry {
 interface CallState {
   // Call state
   currentCall: Call | null;
+  joinableCall: Call | null;
   isInCall: boolean;
   isIncomingCall: boolean;
-  
+
   // Media state
   localStream: MediaStream | null;
-  remoteStreams: RemoteStreamEntry[]; 
-  
+  remoteStreams: RemoteStreamEntry[];
+
   // Media controls
   isMuted: boolean;
   isVideoOff: boolean;
-  
+
   // Actions
   setCurrentCall: (call: Call | null) => void;
+  setJoinableCall: (call: Call | null) => void;
   setIsInCall: (isInCall: boolean) => void;
   setIsIncomingCall: (isIncoming: boolean) => void;
   setLocalStream: (stream: MediaStream | null) => void;
@@ -54,6 +58,7 @@ interface CallState {
 export const useCallStore = create<CallState>((set, get) => ({
   // Initial state
   currentCall: null,
+  joinableCall: null,
   isInCall: false,
   isIncomingCall: false,
   localStream: null,
@@ -63,9 +68,11 @@ export const useCallStore = create<CallState>((set, get) => ({
 
   // Actions
   setCurrentCall: (call) => set({ currentCall: call }),
-  
+
+  setJoinableCall: (call) => set({ joinableCall: call }),
+
   setIsInCall: (isInCall) => set({ isInCall }),
-  
+
   setIsIncomingCall: (isIncoming) => set({ isIncomingCall: isIncoming }),
   
   setLocalStream: (stream) => {
@@ -130,17 +137,15 @@ export const useCallStore = create<CallState>((set, get) => ({
   
   resetCall: () => {
     const { localStream, remoteStreams } = get();
-    
-    // Stop local stream
+
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
     }
-    
-    // Stop all remote streams
+
     remoteStreams.forEach(entry => {
       entry.stream.getTracks().forEach(track => track.stop());
     });
-    
+
     set({
       currentCall: null,
       isInCall: false,
