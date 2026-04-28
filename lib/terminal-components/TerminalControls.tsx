@@ -19,7 +19,7 @@ export default function TerminalControls({
   onStop,
 }: TerminalControlsProps) {
   const { baseStyles, textSecondary, textPrimary } = useTerminalStyles()
-  const { runButtonStyles, clearButtonStyles } = useTerminalButtonStyles()
+  const { runButtonStyles } = useTerminalButtonStyles()
 
   return (
     <div
