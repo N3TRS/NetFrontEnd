@@ -7,6 +7,7 @@ import {
   Check,
   Clock,
   Code2,
+  Copy,
   Crown,
   Pencil,
   Trash2,
@@ -65,9 +66,20 @@ export default function SessionCard({
   const [nameDraft, setNameDraft] = useState(session.name);
   const [isBusy, setIsBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isOwner =
     !!currentUserEmail && session.ownerEmail === currentUserEmail;
+
+  const copyInviteCode = async () => {
+    try {
+      await navigator.clipboard.writeText(session.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // silencioso
+    }
+  };
 
   const continueHref = `/codeEditor?sessionId=${encodeURIComponent(session.id)}&language=${encodeURIComponent(session.language)}&inviteCode=${encodeURIComponent(session.inviteCode)}&name=${encodeURIComponent(session.name)}`;
 
@@ -191,6 +203,24 @@ export default function SessionCard({
                 Guest
               </span>
             )}
+            <button
+              type="button"
+              onClick={copyInviteCode}
+              title="Copiar código de invitación"
+              className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-xs text-white/60 transition-colors hover:border-white/20 hover:text-white"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3 w-3 text-green-400" />
+                  <span className="text-green-400">Copiado</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" />
+                  {session.inviteCode}
+                </>
+              )}
+            </button>
           </div>
         </div>
 

@@ -220,6 +220,44 @@
   box-shadow: 0 0 50px -12px rgba(90, 24, 154, 0.5);
 }
 
+.sessions-hero-border {
+  position: relative;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+.sessions-hero-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,139,16,0.68) 0%, rgba(90,24,154,0.52) 55%, rgba(255,139,16,0.24) 100%);
+  z-index: -1;
+}
+
+.glow-orange-hero {
+  box-shadow:
+    0 0 0 1px rgba(255,139,16,0.22),
+    0 0 90px -6px rgba(255,139,16,0.44),
+    0 0 160px -16px rgba(255,139,16,0.18),
+    0 8px 40px -8px rgba(0,0,0,0.65);
+}
+
+@utility sessions-ambient {
+  background:
+    radial-gradient(ellipse 78% 58% at 50% -5%,
+      rgba(255,139,16,0.19) 0%,
+      rgba(255,139,16,0.07) 52%,
+      transparent 76%),
+    radial-gradient(ellipse 40% 30% at 82% 98%,
+      rgba(90,24,154,0.10) 0%,
+      transparent 60%),
+    #0d1117;
+}
+
+@utility section-secondary {
+  @apply rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5;
+}
+
 @utility section-container {
   @apply w-full max-w-7xl px-6;
 }

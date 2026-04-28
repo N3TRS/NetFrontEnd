@@ -11,10 +11,10 @@ interface TerminalOutputProps {
 }
 
 const LOG_LEVEL_COLORS: Record<string, { color: string; indicator: string }> = {
-  INFO: { color: "\x1b[38;2;80;250;123m", indicator: "✓" }, // Green
-  WARN: { color: "\x1b[38;2;241;250;140m", indicator: "⚠" }, // Yellow
-  ERROR: { color: "\x1b[38;2;255;85;85m", indicator: "✕" }, // Red
-  DEBUG: { color: "\x1b[38;2;139;233;253m", indicator: "◆" }, // Cyan
+  INFO: { color: "\x1b[38;2;80;250;123m", indicator: "✓" },
+  WARN: { color: "\x1b[38;2;241;250;140m", indicator: "⚠" },
+  ERROR: { color: "\x1b[38;2;255;85;85m", indicator: "✕" },
+  DEBUG: { color: "\x1b[38;2;139;233;253m", indicator: "◆" },
 }
 
 const RESET_COLOR = "\x1b[0m"
@@ -22,10 +22,7 @@ const RESET_COLOR = "\x1b[0m"
 const getXTermColorsFromCSS = () => {
   const root = document.documentElement
   const computedStyle = getComputedStyle(root)
-
-  const getColor = (varName: string): string => {
-    return computedStyle.getPropertyValue(varName).trim()
-  }
+  const getColor = (varName: string): string => computedStyle.getPropertyValue(varName).trim()
 
   return {
     background: getColor('--xterm-background'),
@@ -54,9 +51,7 @@ const getXTermColorsFromCSS = () => {
 
 const colorizeLog = (line: string): string => {
   for (const [level, { color }] of Object.entries(LOG_LEVEL_COLORS)) {
-    if (line.includes(level)) {
-      return color + line + RESET_COLOR
-    }
+    if (line.includes(level)) return color + line + RESET_COLOR
   }
   return line
 }
@@ -82,18 +77,11 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
 
   useEffect(() => {
     if (!instance) return
-
     fitAddon.fit()
-
     const observer = new ResizeObserver(() => {
-      try {
-        fitAddon.fit()
-      } catch {
-      }
+      try { fitAddon.fit() } catch {}
     })
-
     if (ref.current) observer.observe(ref.current)
-
     return () => observer.disconnect()
   }, [instance, fitAddon, ref])
 
@@ -111,9 +99,10 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
 
   return (
     <div
-      className="flex-1 min-h-0 rounded-none overflow-hidden border transition-theme"
+      className="flex-1 min-h-0 overflow-hidden transition-theme"
       style={{
-        borderColor: 'var(--terminal-border)',
+        borderTop: '1px solid var(--terminal-border)',
+        borderBottom: '1px solid var(--terminal-border)',
       }}
       role="region"
       aria-label="Terminal output area"
@@ -130,5 +119,3 @@ export default function TerminalOutput({ logs }: TerminalOutputProps) {
     </div>
   )
 }
-
-
