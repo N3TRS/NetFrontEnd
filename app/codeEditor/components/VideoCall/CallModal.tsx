@@ -5,22 +5,41 @@ import { Button } from "@/components/ui/button";
 import { X, Phone, Loader2 } from "lucide-react";
 import { useSessionCallData, SessionParticipant } from "../../hooks/useSessionCallData";
 
+type CallModalMode = 'start' | 'invite';
+
 interface CallModalProps {
   open: boolean;
   onClose: () => void;
-  onStartCall: (participantEmails: string[]) => void;
+  onSubmit: (participantEmails: string[]) => void;
   currentUserId: string;
   sessionId: string | null;
   token: string | null;
+  mode?: CallModalMode;
+  excludeEmails?: string[];
 }
 
-export function CallModal({ 
-  open, 
-  onClose, 
-  onStartCall, 
-  currentUserId, 
+const MODE_COPY: Record<CallModalMode, { title: string; cta: string; emptyHint: string }> = {
+  start: {
+    title: 'Iniciar llamada',
+    cta: 'Llamar',
+    emptyHint: 'No hay otros participantes en la sesión',
+  },
+  invite: {
+    title: 'Añadir a la llamada',
+    cta: 'Invitar',
+    emptyHint: 'No hay más participantes para invitar',
+  },
+};
+
+export function CallModal({
+  open,
+  onClose,
+  onSubmit,
+  currentUserId,
   sessionId,
-  token 
+  token,
+  mode = 'start',
+  excludeEmails = [],
 }: CallModalProps) {
   const [participants, setParticipants] = useState<SessionParticipant[]>([]);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
@@ -54,9 +73,11 @@ export function CallModal({
 
   if (!open) return null;
 
+  const excludeSet = new Set([currentUserId, ...excludeEmails]);
   const otherParticipants = participants.filter(
-    (p: SessionParticipant) => p.email !== currentUserId
+    (p: SessionParticipant) => !excludeSet.has(p.email),
   );
+  const copy = MODE_COPY[mode];
 
   const toggleParticipant = (email: string) => {
     if (selectedParticipants.includes(email)) {
@@ -75,9 +96,9 @@ export function CallModal({
     setSelectedParticipants([]);
   };
 
-  const handleStartCall = () => {
+  const handleSubmit = () => {
     if (selectedParticipants.length > 0) {
-      onStartCall(selectedParticipants);
+      onSubmit(selectedParticipants);
       setSelectedParticipants([]);
     }
   };
@@ -86,7 +107,7 @@ export function CallModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-lg border border-white/10 bg-background p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Iniciar llamada</h2>
+          <h2 className="text-xl font-semibold">{copy.title}</h2>
           <button
             onClick={onClose}
             className="rounded-md p-1 hover:bg-white/10"
@@ -110,13 +131,13 @@ export function CallModal({
           </div>
         ) : otherParticipants.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
-            <p>No hay otros participantes en la sesión</p>
+            <p>{copy.emptyHint}</p>
           </div>
         ) : (
           <>
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                Selecciona a quién llamar:
+                {mode === 'invite' ? 'Selecciona a quién invitar:' : 'Selecciona a quién llamar:'}
               </p>
               <div className="flex gap-2">
                 <button
@@ -173,12 +194,12 @@ export function CallModal({
             Cancelar
           </Button>
           <Button
-            onClick={handleStartCall}
+            onClick={handleSubmit}
             disabled={selectedParticipants.length === 0 || !sessionId}
             className="gap-2 bg-green-500 hover:bg-green-600"
           >
             <Phone className="h-4 w-4" />
-            Llamar ({selectedParticipants.length})
+            {copy.cta} ({selectedParticipants.length})
           </Button>
         </div>
       </div>

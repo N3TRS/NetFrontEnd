@@ -83,13 +83,14 @@ const App = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
-  const [callModalOpen, setCallModalOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
-  const { isInCall, isIncomingCall, joinableCall } = useCallStore();
+  const { isInCall, isIncomingCall, joinableCall, currentCall } = useCallStore();
   const userEmail = user?.email;
-  const { startCall, acceptCall, rejectCall, leaveCall, joinCall } = useWebRTC(userEmail || '', token);
+  const { startCall, acceptCall, rejectCall, leaveCall, joinCall, inviteToCall } =
+    useWebRTC(userEmail || '', token);
+  const [callModalMode, setCallModalMode] = useState<'start' | 'invite' | null>(null);
 
   useSessionSocket({
     token,
@@ -99,8 +100,17 @@ const App = () => {
       setExternalResult(payload);
     },
     onPresence: (payload) => {
+      // members[] is treated as additive (snapshot or partial — never authoritative).
+      // Removals must arrive as an explicit { userEmail, status: 'offline' } delta.
       if (Array.isArray(payload.members)) {
-        setParticipants(payload.members.map((email) => ({ email })));
+        const incoming = payload.members;
+        setParticipants((prev) => {
+          const seen = new Set(prev.map((p) => p.email));
+          const additions = incoming
+            .filter((email) => !seen.has(email))
+            .map((email) => ({ email }));
+          return additions.length === 0 ? prev : [...prev, ...additions];
+        });
       } else if (payload.userEmail && payload.status) {
         setParticipants((prev) => {
           if (payload.status === 'online') {
@@ -180,7 +190,7 @@ const App = () => {
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
-          onToggleCall={() => setCallModalOpen(true)}
+          onToggleCall={() => setCallModalMode(isInCall ? 'invite' : 'start')}
           joinableCall={joinableCall}
           onJoinCall={joinCall}
         />
@@ -226,17 +236,30 @@ const App = () => {
       </div>
 
       <CallModal
-        open={callModalOpen}
-        onClose={() => setCallModalOpen(false)}
-        onStartCall={(emails) => {
-          startCall(emails);
-          setCallModalOpen(false);
+        open={callModalMode !== null}
+        onClose={() => setCallModalMode(null)}
+        onSubmit={(emails) => {
+          if (callModalMode === 'invite') {
+            void inviteToCall(emails);
+          } else {
+            void startCall(emails);
+          }
+          setCallModalMode(null);
         }}
         currentUserId={userEmail || ""}
         sessionId={sessionId}
         token={token}
+        mode={callModalMode ?? 'start'}
+        excludeEmails={
+          callModalMode === 'invite' && currentCall ? currentCall.participants : []
+        }
       />
-      {isInCall && <VideoCall onEndCall={leaveCall} />}
+      {isInCall && (
+        <VideoCall
+          onEndCall={leaveCall}
+          onAddToCall={() => setCallModalMode('invite')}
+        />
+      )}
       {isIncomingCall && (
         <IncomingCallDialog
           onAcceptCall={acceptCall}

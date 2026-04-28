@@ -10,12 +10,14 @@ import {
   Maximize2,
   Minimize2,
   PhoneOff,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface VideoCallProps {
   onEndCall: () => void | Promise<void>;
+  onAddToCall?: () => void;
 }
 
 function avatarColor(userId: string) {
@@ -142,7 +144,7 @@ function MiniRemoteVideo({ stream }: { stream: MediaStream }) {
   return <video ref={ref} autoPlay playsInline className="h-full w-full object-cover" />;
 }
 
-export function VideoCall({ onEndCall }: VideoCallProps) {
+export function VideoCall({ onEndCall, onAddToCall }: VideoCallProps) {
   const {
     isInCall,
     localStream,
@@ -302,6 +304,15 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           >
             {isVideoOff ? <VideoOff className="h-4 w-4 text-white" /> : <VideoIcon className="h-4 w-4 text-white" />}
           </button>
+          {onAddToCall && (
+            <button
+              onClick={onAddToCall}
+              title="Añadir participantes"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+            >
+              <UserPlus className="h-4 w-4 text-white" />
+            </button>
+          )}
           <button
             onClick={onEndCall}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 transition-colors hover:bg-red-600"
@@ -402,6 +413,16 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         >
           {isVideoOff ? <VideoOff className="h-5 w-5 text-white" /> : <VideoIcon className="h-5 w-5 text-white" />}
         </button>
+
+        {onAddToCall && (
+          <button
+            onClick={onAddToCall}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 transition-all hover:bg-white/25"
+            title="Añadir participantes"
+          >
+            <UserPlus className="h-5 w-5 text-white" />
+          </button>
+        )}
 
         <button
           onClick={onEndCall}

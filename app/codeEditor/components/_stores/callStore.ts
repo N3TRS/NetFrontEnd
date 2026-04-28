@@ -52,6 +52,7 @@ interface CallState {
   removeRemoteStream: (userId: string) => void;
   toggleMute: () => void;
   toggleVideo: () => void;
+  setIsMuted: (value: boolean) => void;
   setIsVideoOff: (value: boolean) => void;
   resetCall: () => void;
 }
@@ -97,18 +98,10 @@ export const useCallStore = create<CallState>((set, get) => ({
     });
   },
   
-  removeRemoteStream: (userId) => {
-    const entry = get().remoteStreams.find(s => s.userId === userId);
-    
-    // Stop the stream
-    if (entry) {
-      entry.stream.getTracks().forEach(track => track.stop());
-    }
-    
+  removeRemoteStream: (userId) =>
     set((state) => ({
-      remoteStreams: state.remoteStreams.filter(s => s.userId !== userId)
-    }));
-  },
+      remoteStreams: state.remoteStreams.filter(s => s.userId !== userId),
+    })),
   
   toggleMute: () => {
     const { localStream, isMuted } = get();
@@ -135,6 +128,8 @@ export const useCallStore = create<CallState>((set, get) => ({
 
     set({ isVideoOff: !isVideoOff });
   },
+
+  setIsMuted: (value) => set({ isMuted: value }),
 
   setIsVideoOff: (value) => set({ isVideoOff: value }),
   

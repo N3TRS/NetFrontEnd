@@ -151,35 +151,44 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
   }, [userId]);
 
-  // Get user media with progressive fallback: video+audio → audio only → empty stream
-  const getUserMedia = async (audio = true, video = true): Promise<MediaStream> => {
-    const { setIsVideoOff } = useCallStore.getState();
+  // Acquire local media for the call. Tracks are created DISABLED so the user
+  // joins muted with camera off — peers see/hear nothing until the user toggles.
+  // Capture stays cold; senders are wired up on PC create so toggling later is
+  // a simple track.enabled flip with no renegotiation.
+  const getUserMedia = async (): Promise<MediaStream> => {
+    const { setIsMuted, setIsVideoOff } = useCallStore.getState();
+
+    const disableAll = (stream: MediaStream) => {
+      stream.getTracks().forEach((t) => { t.enabled = false; });
+    };
 
     // 1. Try video + audio
-    if (video) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio,
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        setLocalStream(stream);
-        return stream;
-      } catch { /* no camera, fall through */ }
-    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      disableAll(stream);
+      setLocalStream(stream);
+      setIsMuted(true);
+      setIsVideoOff(true);
+      return stream;
+    } catch { /* no camera, fall through */ }
 
     // 2. Try audio only
-    if (audio) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        setLocalStream(stream);
-        setIsVideoOff(true);
-        return stream;
-      } catch { /* no microphone either, fall through */ }
-    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      disableAll(stream);
+      setLocalStream(stream);
+      setIsMuted(true);
+      setIsVideoOff(true);
+      return stream;
+    } catch { /* no microphone either, fall through */ }
 
-    // 3. No devices — join with empty stream (can still receive others' media)
+    // 3. No devices — join with empty stream (recvonly transceivers added later)
     const empty = new MediaStream();
     setLocalStream(empty);
+    setIsMuted(true);
     setIsVideoOff(true);
     return empty;
   };
@@ -193,13 +202,16 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     const pc = new RTCPeerConnection(DEFAULT_CONFIG);
 
+    // Always negotiate one audio + one video m-line. Real local tracks become
+    // sendrecv senders; missing kinds are backfilled as recvonly so we can
+    // still receive remote media even when this user has no mic/cam.
     const localStream = useCallStore.getState().localStream;
-    if (localStream && localStream.getTracks().length > 0) {
-      localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-    } else {
-      pc.addTransceiver('audio', { direction: 'recvonly' });
-      pc.addTransceiver('video', { direction: 'recvonly' });
-    }
+    const tracks = localStream?.getTracks() ?? [];
+    tracks.forEach((track) => pc.addTrack(track, localStream!));
+
+    const has = (kind: 'audio' | 'video') => tracks.some((t) => t.kind === kind);
+    if (!has('audio')) pc.addTransceiver('audio', { direction: 'recvonly' });
+    if (!has('video')) pc.addTransceiver('video', { direction: 'recvonly' });
 
     pc.onicecandidate = (event) => {
       if (event.candidate && socketRef.current) {
@@ -216,7 +228,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      // 'disconnected' is transient and self-heals; only tear down on terminal states.
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         removeRemoteStream(remoteUserId);
         peerConnectionsRef.current.delete(remoteUserId);
         pendingCandidatesRef.current.delete(remoteUserId);
@@ -308,7 +321,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       });
       if (!response.ok) throw new Error('Failed to accept call');
 
-      await getUserMedia(true, true);
+      await getUserMedia();
 
       setIsInCall(true);
       setIsIncomingCall(false);
@@ -316,8 +329,10 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const freshCall = useCallStore.getState().currentCall;
       if (freshCall) {
         if (freshCall.callerId !== userId) await createOffer(freshCall.callerId);
-        for (const participantId of freshCall.acceptedUsers) {
-          if (participantId !== userId) await createOffer(participantId);
+        for (const participantId of freshCall.activeParticipants) {
+          if (participantId !== userId && participantId !== freshCall.callerId) {
+            await createOffer(participantId);
+          }
         }
       }
     } catch (error) {
@@ -379,7 +394,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const joinCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
     try {
-      await getUserMedia(true, true);
+      await getUserMedia();
 
       const response = await fetch(`${CALLS_URL}/calls/${callId}/join`, {
         method: 'POST',
@@ -406,6 +421,33 @@ export const useWebRTC = (userId: string, token: string | null) => {
     }
   }, [userId, token, resetCall]);
 
+  // Invite additional participants to the active call.
+  // Backend re-uses the incoming-call flow: invitees get an `incoming-call` socket event
+  // and follow the normal accept path. No WebRTC state change here.
+  const inviteToCall = useCallback(async (inviteeIds: string[]) => {
+    const callId = useCallStore.getState().currentCall?.id;
+    if (!callId || !socketRef.current) return;
+    if (inviteeIds.length === 0) return;
+
+    try {
+      const response = await fetch(`${CALLS_URL}/calls/${callId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ inviterId: userId, inviteeIds }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as { message?: string }).message || `Failed to invite: ${response.status}`);
+      }
+
+      const rawData: Record<string, unknown> = await response.json();
+      const call = normalizeCall(rawData);
+      setCurrentCall(call);
+    } catch (error) {
+      console.error('Error inviting to call:', error);
+    }
+  }, [userId, token]);
+
   // Start a new call
   const startCall = useCallback(async (participantIds: string[]) => {
     if (!socketRef.current) return;
@@ -427,7 +469,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const call = normalizeCall(rawData);
       setCurrentCall(call);
 
-      await getUserMedia(true, true);
+      await getUserMedia();
 
       setIsInCall(true);
     } catch (error) {
@@ -442,5 +484,6 @@ export const useWebRTC = (userId: string, token: string | null) => {
     leaveCall,
     joinCall,
     startCall,
+    inviteToCall,
   };
 };
