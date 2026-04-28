@@ -37,6 +37,13 @@ function initials(label: string) {
   return label.slice(0, 2).toUpperCase();
 }
 
+function displayName(email: string): string {
+  const local = email.includes('@') ? email.split('@')[0] : email;
+  return local
+    .replace(/[._]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 interface ParticipantTileProps {
   label: string;
   userId: string;
@@ -252,7 +259,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           {remoteParticipants.length > 0 ? (
             <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0d1117]">
               <video data-user-id={remoteParticipants[0][0]} autoPlay playsInline className="h-full w-full object-cover" />
-              <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">P1</div>
+              <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">{displayName(remoteParticipants[0][0])}</div>
             </div>
           ) : (
             <div className="flex aspect-video items-center justify-center rounded-lg bg-[#0d1117] text-white/30">
@@ -351,10 +358,10 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           />
 
           {/* Remotos */}
-          {remoteParticipants.map(([userId], index) => (
+          {remoteParticipants.map(([userId]) => (
             <ParticipantTile
               key={userId}
-              label={`Participante ${index + 1}`}
+              label={displayName(userId)}
               userId={userId}
             />
           ))}
