@@ -191,8 +191,11 @@ export const useWebRTC = (userId: string, token: string | null) => {
     const pc = new RTCPeerConnection(DEFAULT_CONFIG);
 
     const localStream = useCallStore.getState().localStream;
-    if (localStream) {
+    if (localStream && localStream.getTracks().length > 0) {
       localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    } else {
+      pc.addTransceiver('audio', { direction: 'recvonly' });
+      pc.addTransceiver('video', { direction: 'recvonly' });
     }
 
     pc.onicecandidate = (event) => {
