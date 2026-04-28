@@ -84,9 +84,9 @@ export const useWebRTC = (userId: string, token: string | null) => {
       // NOTE: We do NOT request media here - only when accepting
     });
 
-    // Handle call accepted
-    socket.on('call-accepted', (data: { call: Call; userId: string }) => {
-      setCurrentCall(data.call);
+    // Handle call accepted — backend sends Call object directly (not wrapped)
+    socket.on('call-accepted', (data: Call) => {
+      setCurrentCall(data);
       // Acceptor creates offers to everyone after getUserMedia — don't create offers here
       // to avoid glare (both sides creating offers simultaneously)
     });
@@ -105,17 +105,17 @@ export const useWebRTC = (userId: string, token: string | null) => {
       resetCall();
     });
 
-    // WebRTC Signaling
-    socket.on('webrtc:offer', async (data: { from: string; offer: RTCSessionDescriptionInit }) => {
-      await handleOffer(data.from, data.offer);
+    // WebRTC Signaling — backend uses { from, signal } for all three events
+    socket.on('webrtc:offer', async (data: { from: string; signal: RTCSessionDescriptionInit }) => {
+      await handleOffer(data.from, data.signal);
     });
 
-    socket.on('webrtc:answer', async (data: { from: string; answer: RTCSessionDescriptionInit }) => {
-      await handleAnswer(data.from, data.answer);
+    socket.on('webrtc:answer', async (data: { from: string; signal: RTCSessionDescriptionInit }) => {
+      await handleAnswer(data.from, data.signal);
     });
 
-    socket.on('webrtc:ice-candidate', async (data: { from: string; candidate: RTCIceCandidateInit }) => {
-      await handleIceCandidate(data.from, data.candidate);
+    socket.on('webrtc:ice-candidate', async (data: { from: string; signal: RTCIceCandidateInit }) => {
+      await handleIceCandidate(data.from, data.signal);
     });
 
     socketRef.current = socket;
@@ -164,7 +164,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       if (event.candidate && socketRef.current) {
         socketRef.current.emit('webrtc:ice-candidate', {
           to: remoteUserId,
-          candidate: event.candidate.toJSON(),
+          signal: event.candidate.toJSON(),
         });
       }
     };
@@ -197,7 +197,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       if (socketRef.current) {
         socketRef.current.emit('webrtc:offer', {
           to: remoteUserId,
-          offer: offer,
+          signal: offer,
         });
       }
     } catch (error) {
@@ -217,7 +217,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       if (socketRef.current) {
         socketRef.current.emit('webrtc:answer', {
           to: remoteUserId,
-          answer: answer,
+          signal: answer,
         });
       }
     } catch (error) {
