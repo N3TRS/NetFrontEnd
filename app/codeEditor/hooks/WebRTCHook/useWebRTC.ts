@@ -87,11 +87,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
     // Handle call accepted
     socket.on('call-accepted', (data: { call: Call; userId: string }) => {
       setCurrentCall(data.call);
-
-      // If we already have local stream, create offer to new participant
-      if (useCallStore.getState().localStream && data.userId !== userId) {
-        createOffer(data.userId);
-      }
+      // Acceptor creates offers to everyone after getUserMedia — don't create offers here
+      // to avoid glare (both sides creating offers simultaneously)
     });
 
     // Handle call rejected
@@ -146,6 +143,12 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   // Create peer connection
   const createPeerConnection = (remoteUserId: string): RTCPeerConnection => {
+    // Reuse existing PC to avoid overwriting established connections
+    const existing = peerConnectionsRef.current.get(remoteUserId);
+    if (existing && existing.connectionState !== 'closed' && existing.connectionState !== 'failed') {
+      return existing;
+    }
+
     const pc = new RTCPeerConnection(DEFAULT_CONFIG);
 
     // Add local stream tracks
@@ -268,20 +271,26 @@ export const useWebRTC = (userId: string, token: string | null) => {
       setIsInCall(true);
       setIsIncomingCall(false);
 
-      const call = currentCall;
-      if (call) {
-        call.acceptedUsers.forEach((participantId) => {
+      // Use fresh store state — closure currentCall may be stale
+      const freshCall = useCallStore.getState().currentCall;
+      if (freshCall) {
+        // Create offer to the caller
+        if (freshCall.callerId !== userId) {
+          await createOffer(freshCall.callerId);
+        }
+        // Create offers to any already-accepted participants
+        for (const participantId of freshCall.acceptedUsers) {
           if (participantId !== userId) {
-            createOffer(participantId);
+            await createOffer(participantId);
           }
-        });
+        }
       }
 
     } catch (error) {
       console.error('Error accepting call:', error);
       resetCall();
     }
-  }, [userId, currentCall]);
+  }, [userId]);
 
   const rejectCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
