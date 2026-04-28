@@ -52,6 +52,7 @@ interface CallState {
   removeRemoteStream: (userId: string) => void;
   toggleMute: () => void;
   toggleVideo: () => void;
+  setIsVideoOff: (value: boolean) => void;
   resetCall: () => void;
 }
 
@@ -124,16 +125,18 @@ export const useCallStore = create<CallState>((set, get) => ({
   
   toggleVideo: () => {
     const { localStream, isVideoOff } = get();
-    
+
     if (localStream) {
       const videoTrack = localStream.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = isVideoOff; // Toggle
+        videoTrack.enabled = isVideoOff;
       }
     }
-    
+
     set({ isVideoOff: !isVideoOff });
   },
+
+  setIsVideoOff: (value) => set({ isVideoOff: value }),
   
   resetCall: () => {
     const { localStream, remoteStreams } = get();

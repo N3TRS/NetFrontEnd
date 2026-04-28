@@ -148,19 +148,37 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
   }, [userId]);
 
-  // Get user media (only called when accepting/joining call)
-  const getUserMedia = async (audio = true, video = true): Promise<MediaStream | null> => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio,
-        video: video ? { width: 1280, height: 720 } : false,
-      });
-      setLocalStream(stream);
-      return stream;
-    } catch (error) {
-      console.error('Error accessing media devices:', error);
-      return null;
+  // Get user media with progressive fallback: video+audio → audio only → empty stream
+  const getUserMedia = async (audio = true, video = true): Promise<MediaStream> => {
+    const { setIsVideoOff } = useCallStore.getState();
+
+    // 1. Try video + audio
+    if (video) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio,
+          video: { width: 1280, height: 720 },
+        });
+        setLocalStream(stream);
+        return stream;
+      } catch { /* no camera, fall through */ }
     }
+
+    // 2. Try audio only
+    if (audio) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setLocalStream(stream);
+        setIsVideoOff(true);
+        return stream;
+      } catch { /* no microphone either, fall through */ }
+    }
+
+    // 3. No devices — join with empty stream (can still receive others' media)
+    const empty = new MediaStream();
+    setLocalStream(empty);
+    setIsVideoOff(true);
+    return empty;
   };
 
   // Create peer connection
@@ -258,8 +276,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       });
       if (!response.ok) throw new Error('Failed to accept call');
 
-      const stream = await getUserMedia(true, true);
-      if (!stream) throw new Error('Could not access media devices');
+      await getUserMedia(true, true);
 
       setIsInCall(true);
       setIsIncomingCall(false);
@@ -330,8 +347,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const joinCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
     try {
-      const stream = await getUserMedia(true, true);
-      if (!stream) throw new Error('Could not access media devices');
+      await getUserMedia(true, true);
 
       const response = await fetch(`${CALLS_URL}/calls/${callId}/join`, {
         method: 'POST',
@@ -379,8 +395,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const call = normalizeCall(rawData);
       setCurrentCall(call);
 
-      const stream = await getUserMedia(true, true);
-      if (!stream) throw new Error('Could not access media devices');
+      await getUserMedia(true, true);
 
       setIsInCall(true);
     } catch (error) {
