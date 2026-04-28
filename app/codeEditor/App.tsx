@@ -102,8 +102,14 @@ const App = () => {
     onPresence: (payload) => {
       if (Array.isArray(payload.members)) {
         setParticipants(payload.members.map((email) => ({ email })));
-      } else if (typeof payload.participantsOnline === "number" && user?.email) {
-        setParticipants([{ email: user.email }]);
+      } else if (payload.userEmail && payload.status) {
+        setParticipants((prev) => {
+          if (payload.status === 'online') {
+            if (prev.some((p) => p.email === payload.userEmail)) return prev;
+            return [...prev, { email: payload.userEmail }];
+          }
+          return prev.filter((p) => p.email !== payload.userEmail);
+        });
       }
     },
   });
