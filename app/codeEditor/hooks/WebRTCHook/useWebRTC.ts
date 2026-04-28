@@ -16,7 +16,7 @@ const DEFAULT_CONFIG: WebRTCConfig = {
 
 const CALLS_URL = process.env.NEXT_PUBLIC_URL_CALL ?? '';
 
-export const useWebRTC = (userId: string) => {
+export const useWebRTC = (userId: string, token: string | null) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
 
@@ -252,7 +252,7 @@ export const useWebRTC = (userId: string) => {
     try {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/accept`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId }),
       });
 
@@ -288,7 +288,7 @@ export const useWebRTC = (userId: string) => {
     try {
       await fetch(`${CALLS_URL}/calls/${callId}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId }),
       });
 
@@ -312,7 +312,7 @@ export const useWebRTC = (userId: string) => {
       try {
         const response = await fetch(`${CALLS_URL}/calls/${callId}/end`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -332,7 +332,7 @@ export const useWebRTC = (userId: string) => {
     try {
       const response = await fetch(`${CALLS_URL}/calls/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           callerId: userId,
           participants: participantIds,
