@@ -8,7 +8,7 @@ import { LANGUAGE_VERSIONS } from "@/app/codeEditor/Utils/constants";
 
 type SupportedLanguage = keyof typeof LANGUAGE_VERSIONS;
 
-const DEFAULT_LANGUAGE: SupportedLanguage = "javascript";
+const DEFAULT_LANGUAGE: SupportedLanguage = "typescript";
 
 export function useSessionActions() {
   const router = useRouter();

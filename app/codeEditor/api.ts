@@ -84,7 +84,7 @@ export const deleteSession = (
 export const createSession = (
   token: string,
   name: string,
-  language: keyof typeof LANGUAGE_VERSIONS = 'javascript',
+  language: keyof typeof LANGUAGE_VERSIONS = 'typescript',
 ): Promise<{ session: SessionSummary }> =>
   request('/v1/sessions', {
     method: 'POST',
