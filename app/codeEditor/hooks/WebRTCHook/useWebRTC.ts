@@ -14,6 +14,8 @@ const DEFAULT_CONFIG: WebRTCConfig = {
   ],
 };
 
+const CALLS_URL = process.env.NEXT_PUBLIC_URL_CALL ?? '';
+
 export const useWebRTC = (userId: string) => {
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
@@ -55,7 +57,6 @@ export const useWebRTC = (userId: string) => {
   useEffect(() => {
     if (!userId) return;
 
-    const CALLS_URL = process.env.NEXT_PUBLIC_URL_CALL || 'http://localhost:3003';
     const socket = io(CALLS_URL, {
       path: '/calls/socket.io',
       transports: ['websocket'],
@@ -249,7 +250,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/accept`, {
+      const response = await fetch(`${CALLS_URL}/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -285,7 +286,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/reject`, {
+      await fetch(`${CALLS_URL}/calls/${callId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -309,7 +310,7 @@ export const useWebRTC = (userId: string) => {
 
     if (callId && socketRef.current) {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/${callId}/end`, {
+        const response = await fetch(`${CALLS_URL}/calls/${callId}/end`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -329,7 +330,7 @@ export const useWebRTC = (userId: string) => {
     if (!socketRef.current) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_URL_CALL}/calls/create`, {
+      const response = await fetch(`${CALLS_URL}/calls/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
