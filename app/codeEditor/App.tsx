@@ -35,7 +35,6 @@ type ExecutionRunPayload = {
 };
 
 const RUNNERS: Record<Language, string> = {
-  javascript: "node",
   typescript: "ts-node",
   python: "python",
   java: "java",
@@ -43,7 +42,7 @@ const RUNNERS: Record<Language, string> = {
 
 function resolveLanguage(value: string | null): Language {
   if (value && value in LANGUAGE_VERSIONS) return value as Language;
-  return "javascript";
+  return "typescript";
 }
 
 function deriveFilename(name: string, language: Language): string {
