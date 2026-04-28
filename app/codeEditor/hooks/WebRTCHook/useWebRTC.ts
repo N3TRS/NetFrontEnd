@@ -51,6 +51,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
     setIsIncomingCall,
     resetCall,
     currentCall,
+    isInCall,
   } = useCallStore();
 
   // Initialize socket connection
@@ -328,6 +329,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   // Start a new call
   const startCall = useCallback(async (participantIds: string[]) => {
     if (!socketRef.current) return;
+    if (isInCall) return;
 
     try {
       const response = await fetch(`${CALLS_URL}/calls/create`, {
@@ -359,7 +361,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       console.error('Error starting call:', error);
       resetCall();
     }
-  }, [userId, currentCall]);
+  }, [userId, currentCall, isInCall]);
 
   return {
     acceptCall,
