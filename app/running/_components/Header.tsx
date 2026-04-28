@@ -63,7 +63,7 @@ export default function HeaderRunnning() {
             ref={menuButtonRef}
             onClick={() => setMenuOpen((prev) => !prev)}
             onKeyDown={handleKeyDown}
-            className="focus-ring rounded-full transition-colors p-1"
+            className="focus-ring rounded-full transition-all duration-200 cursor-pointer p-0.5 ring-2 ring-transparent hover:ring-primary/50 hover:ring-offset-2 hover:ring-offset-[#0a0e14]"
             aria-label="Menú de usuario"
             aria-expanded={menuOpen}
             aria-haspopup="menu"
@@ -77,7 +77,7 @@ export default function HeaderRunnning() {
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <UserCircle className="h-10 w-10 text-muted-foreground" />
+              <UserCircle className="h-10 w-10 text-muted-foreground hover:text-white transition-colors" />
             )}
           </button>
 

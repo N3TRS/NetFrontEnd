@@ -31,7 +31,7 @@ export function EditorTerminal({
     >
       <div className="flex h-9 shrink-0 items-center justify-between border-b border-white/5 bg-background px-4 text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-white">Terminal</span>
+          <span className="font-medium text-white">Output</span>
           <span
             className="size-2 rounded-full bg-green-500"
             aria-label="Active"
