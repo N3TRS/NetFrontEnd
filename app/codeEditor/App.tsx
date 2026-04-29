@@ -258,6 +258,7 @@ const App = () => {
         <VideoCall
           onEndCall={leaveCall}
           onAddToCall={() => setCallModalMode('invite')}
+          currentUserLabel={userEmail || ''}
         />
       )}
       {isIncomingCall && (
