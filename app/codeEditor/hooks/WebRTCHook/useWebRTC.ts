@@ -101,11 +101,21 @@ export const useWebRTC = (userId: string, token: string | null) => {
       if (call) setCurrentCall(call);
     });
 
-    // The call was force-ended for everyone
+    // The call was force-ended for everyone (or prematurely when a participant left)
     socket.on('call-ended', () => {
+      // Capture call state BEFORE reset. If we were actively in the call when
+      // this event fired (i.e. we didn't initiate the leave ourselves), the server
+      // may have ended the session because another participant left — not us.
+      // In that case we surface the rejoin button so the user can get back in.
+      const { isInCall: wasInCall, currentCall: callSnapshot } = useCallStore.getState();
+
       peerConnectionsRef.current.forEach((pc) => pc.close());
       peerConnectionsRef.current.clear();
       resetCall();
+
+      if (wasInCall && callSnapshot) {
+        useCallStore.getState().setJoinableCall(callSnapshot);
+      }
     });
 
     socket.on('call-missed', () => {
@@ -166,10 +176,16 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const getUserMedia = async (audio = true, video = true): Promise<MediaStream> => {
     const { setIsVideoOff } = useCallStore.getState();
 
+    const audioConstraints: MediaTrackConstraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    };
+
     if (video) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio,
+          audio: audio ? audioConstraints : false,
           video: { width: { ideal: 1280 }, height: { ideal: 720 } },
         });
         setLocalStream(stream);
@@ -179,7 +195,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     if (audio) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
         setLocalStream(stream);
         setIsVideoOff(true);
         return stream;
