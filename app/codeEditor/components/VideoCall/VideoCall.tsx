@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 interface VideoCallProps {
   onEndCall: () => void | Promise<void>;
   onAddToCall?: () => void;
+  currentUserLabel?: string;
 }
 
 function avatarColor(userId: string) {
@@ -144,7 +145,7 @@ function MiniRemoteVideo({ stream }: { stream: MediaStream }) {
   return <video ref={ref} autoPlay playsInline className="h-full w-full object-cover" />;
 }
 
-export function VideoCall({ onEndCall, onAddToCall }: VideoCallProps) {
+export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCallProps) {
   const {
     isInCall,
     localStream,
@@ -183,6 +184,7 @@ export function VideoCall({ onEndCall, onAddToCall }: VideoCallProps) {
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(() => {});
     }
   }, [localStream, isMinimized, isVideoOff]);
 
@@ -253,13 +255,13 @@ export function VideoCall({ onEndCall, onAddToCall }: VideoCallProps) {
               <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white", avatarColor("local"))}>
-                  Yo
+                <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white", avatarColor(currentUserLabel || "local"))}>
+                  {currentUserLabel ? initials(displayName(currentUserLabel)) : "Yo"}
                 </div>
               </div>
             )}
             <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">
-              {isMuted && <MicOff className="inline h-2.5 w-2.5 text-red-400" />} Tú
+              {isMuted && <MicOff className="inline h-2.5 w-2.5 text-red-400" />} {currentUserLabel ? displayName(currentUserLabel) : "Tú"} <span className="text-white/50">(Tú)</span>
             </div>
           </div>
 
@@ -361,8 +363,8 @@ export function VideoCall({ onEndCall, onAddToCall }: VideoCallProps) {
       <div className="flex flex-1 overflow-hidden p-3">
         <div className={gridClass}>
           <ParticipantTile
-            label={`Tú${isMuted ? " · Silenciado" : ""}${isVideoOff ? " · Sin cámara" : ""}`}
-            userId="local"
+            label={`${currentUserLabel ? displayName(currentUserLabel) : "Tú"} (Tú)${isMuted ? " · Silenciado" : ""}${isVideoOff ? " · Sin cámara" : ""}`}
+            userId={currentUserLabel || "local"}
             isLocal
             isMuted={isMuted}
             isVideoOff={isVideoOff}

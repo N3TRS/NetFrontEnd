@@ -11,6 +11,9 @@ const DEFAULT_CONFIG: WebRTCConfig = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
   ],
 };
 
@@ -61,7 +64,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   // Initialize socket connection
   useEffect(() => {
-    if (!userId) return;
+    // Don't connect until we have a real userId (avoid registering with empty string)
+    if (!userId || !token) return;
 
     const socket = io(CALLS_URL, {
       path: '/calls/socket.io',
@@ -153,7 +157,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
     return () => {
       socket.disconnect();
     };
-  }, [userId]);
+  }, [userId, token]);
 
   // Acquire local media. Tracks are enabled by default — user joins with mic + cam ON.
   // Progressive fallback: video+audio → audio only → empty stream.
@@ -343,18 +347,31 @@ export const useWebRTC = (userId: string, token: string | null) => {
       });
       if (!response.ok) throw new Error('Failed to accept call');
 
+      // Use fresh call data from the response so we see all current activeParticipants
+      // (others may have already accepted while this user was deciding)
+      let callRef: Call | null = useCallStore.getState().currentCall;
+      try {
+        const rawData: unknown = await response.json();
+        const parsed = getCallFromPayload(rawData);
+        if (parsed) {
+          callRef = parsed;
+          setCurrentCall(callRef);
+        }
+      } catch { /* no body or parse error — fall back to store state */ }
+
       await getUserMedia(true, true);
 
       setIsInCall(true);
       setIsIncomingCall(false);
 
-      const freshCall = useCallStore.getState().currentCall;
-      if (freshCall) {
-        if (freshCall.callerId !== userId) await createOffer(freshCall.callerId);
-        for (const participantId of freshCall.activeParticipants) {
-          if (participantId !== userId && participantId !== freshCall.callerId) {
-            await createOffer(participantId);
-          }
+      if (callRef) {
+        // Create offers to the original caller + anyone already active in the call
+        const participantsToOffer = new Set([
+          callRef.callerId,
+          ...callRef.activeParticipants,
+        ]);
+        for (const participantId of participantsToOffer) {
+          if (participantId !== userId) await createOffer(participantId);
         }
       }
     } catch (error) {

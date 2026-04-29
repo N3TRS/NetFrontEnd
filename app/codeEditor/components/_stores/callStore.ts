@@ -146,6 +146,7 @@ export const useCallStore = create<CallState>((set, get) => ({
 
     set({
       currentCall: null,
+      joinableCall: null,
       isInCall: false,
       isIncomingCall: false,
       localStream: null,

@@ -1,6 +1,7 @@
 "use client";
 
-import { Folder, Phone, PhoneIncoming, Sparkles, Terminal } from "lucide-react";
+import { useState } from "react";
+import { Folder, Loader2, Phone, PhoneIncoming, Sparkles, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Call } from "./_stores/callStore";
@@ -12,7 +13,7 @@ interface EditorSidebarProps {
   onToggleCall: () => void;
   onToggleAiPanel: () => void;
   joinableCall?: Call | null;
-  onJoinCall?: (callId: string) => void;
+  onJoinCall?: (callId: string) => Promise<void>;
 }
 
 export function EditorSidebar({
@@ -24,6 +25,18 @@ export function EditorSidebar({
   joinableCall,
   onJoinCall,
 }: EditorSidebarProps) {
+  const [isJoining, setIsJoining] = useState(false);
+
+  const handleJoinCall = async () => {
+    if (!joinableCall?.id || isJoining || !onJoinCall) return;
+    setIsJoining(true);
+    try {
+      await onJoinCall(joinableCall.id);
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   return (
     <aside
       className="flex w-12 shrink-0 flex-col items-center gap-2 bg-background pt-3"
@@ -44,17 +57,27 @@ export function EditorSidebar({
           <Button
             size="icon"
             variant="ghost"
-            onClick={() => onJoinCall?.(joinableCall.id)}
-            className="cursor-pointer text-green-400 hover:bg-green-500/10 hover:text-green-300 animate-pulse"
+            onClick={handleJoinCall}
+            disabled={isJoining}
+            className={cn(
+              "cursor-pointer text-green-400 hover:bg-green-500/10 hover:text-green-300",
+              !isJoining && "animate-pulse",
+            )}
             title="Unirse a llamada activa"
             aria-label="Unirse a llamada activa"
           >
-            <PhoneIncoming className="size-4" aria-hidden />
+            {isJoining ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <PhoneIncoming className="size-4" aria-hidden />
+            )}
           </Button>
-          <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
-          </span>
+          {!isJoining && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            </span>
+          )}
         </div>
       ) : (
         <Button
