@@ -70,7 +70,9 @@ function ParticipantTile({
   const internalVideoRef = useRef<HTMLVideoElement>(null);
   const color = avatarColor(userId);
 
-  // For remote participants, set srcObject directly via ref whenever the stream changes.
+  // Set srcObject whenever stream changes or video becomes visible again.
+  // isVideoOff is intentionally in deps: when the element goes from hidden→visible
+  // the browser may need play() called again (especially Safari).
   useEffect(() => {
     if (isLocal) return;
     const el = internalVideoRef.current;
@@ -84,7 +86,7 @@ function ParticipantTile({
     const onAddTrack = () => el.play().catch(() => {});
     stream.addEventListener('addtrack', onAddTrack);
     return () => stream.removeEventListener('addtrack', onAddTrack);
-  }, [stream, isLocal]);
+  }, [stream, isLocal, isVideoOff]);
 
   const videoRef = isLocal ? externalVideoRef : internalVideoRef;
 
@@ -95,16 +97,16 @@ function ParticipantTile({
         isSpeaking && "ring-2 ring-green-500 ring-offset-2 ring-offset-black"
       )}
     >
-      {!isVideoOff ? (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted={!!isLocal}
-          playsInline
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-2">
+      {/* Always keep <video> in the DOM so audio keeps playing when video is off */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted={!!isLocal}
+        playsInline
+        className={cn("h-full w-full object-cover", isVideoOff && "hidden")}
+      />
+      {isVideoOff && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
           <div
             className={cn(
               "flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold text-white",
@@ -261,10 +263,15 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
         <div className="grid grid-cols-2 gap-1 bg-black p-1">
           {/* Local tile */}
           <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0d1117]">
-            {!isVideoOff ? (
-              <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className={cn("h-full w-full object-cover", isVideoOff && "hidden")}
+            />
+            {isVideoOff && (
+              <div className="absolute inset-0 flex h-full items-center justify-center">
                 <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white", avatarColor(currentUserLabel || "local"))}>
                   {currentUserLabel ? initials(displayName(currentUserLabel)) : "Yo"}
                 </div>
