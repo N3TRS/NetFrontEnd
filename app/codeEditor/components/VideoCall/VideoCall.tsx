@@ -71,14 +71,19 @@ function ParticipantTile({
   const color = avatarColor(userId);
 
   // For remote participants, set srcObject directly via ref whenever the stream changes.
-  // This avoids DOM queries and setTimeout timing issues.
   useEffect(() => {
     if (isLocal) return;
     const el = internalVideoRef.current;
-    if (el && stream) {
-      el.srcObject = stream;
-      el.play().catch(() => {});
-    }
+    if (!el || !stream) return;
+
+    el.srcObject = stream;
+    el.play().catch(() => {});
+
+    // If a video track arrives after the audio track (same stream object, no re-render),
+    // calling play() again ensures the element picks it up.
+    const onAddTrack = () => el.play().catch(() => {});
+    stream.addEventListener('addtrack', onAddTrack);
+    return () => stream.removeEventListener('addtrack', onAddTrack);
   }, [stream, isLocal]);
 
   const videoRef = isLocal ? externalVideoRef : internalVideoRef;
@@ -136,10 +141,15 @@ function MiniRemoteVideo({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (ref.current && stream) {
-      ref.current.srcObject = stream;
-      ref.current.play().catch(() => {});
-    }
+    const el = ref.current;
+    if (!el || !stream) return;
+
+    el.srcObject = stream;
+    el.play().catch(() => {});
+
+    const onAddTrack = () => el.play().catch(() => {});
+    stream.addEventListener('addtrack', onAddTrack);
+    return () => stream.removeEventListener('addtrack', onAddTrack);
   }, [stream]);
 
   return <video ref={ref} autoPlay playsInline className="h-full w-full object-cover" />;

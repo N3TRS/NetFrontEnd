@@ -38,6 +38,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
   // to avoid signaling glare (both sides re-offering at once).
   const offererRef = useRef<Map<string, boolean>>(new Map());
   const iceRestartAttemptsRef = useRef<Set<string>>(new Set());
+  // Per-peer accumulated remote streams (fallback when browser omits event.streams[0])
+  const remoteMediaStreamsRef = useRef<Map<string, MediaStream>>(new Map());
 
   const isCall = (value: unknown): value is Call => {
     if (!value || typeof value !== 'object') return false;
@@ -220,14 +222,28 @@ export const useWebRTC = (userId: string, token: string | null) => {
     };
 
     pc.ontrack = (event) => {
-      const remoteStream = event.streams[0];
-      if (remoteStream) addRemoteStream(remoteUserId, remoteStream);
+      // Prefer the stream bundled in the event; fall back to a manually accumulated
+      // stream for browsers (e.g. Firefox) that sometimes omit event.streams[0].
+      let stream = event.streams?.[0];
+      if (!stream) {
+        let accumulated = remoteMediaStreamsRef.current.get(remoteUserId);
+        if (!accumulated) {
+          accumulated = new MediaStream();
+          remoteMediaStreamsRef.current.set(remoteUserId, accumulated);
+        }
+        if (!accumulated.getTracks().includes(event.track)) {
+          accumulated.addTrack(event.track);
+        }
+        stream = accumulated;
+      }
+      addRemoteStream(remoteUserId, stream);
     };
 
     pc.onconnectionstatechange = () => {
       // 'disconnected' and 'failed' are recoverable via ICE restart (see oniceconnectionstatechange).
       // Only tear down when the PC is definitively closed.
       if (pc.connectionState === 'closed') {
+        remoteMediaStreamsRef.current.delete(remoteUserId);
         removeRemoteStream(remoteUserId);
         peerConnectionsRef.current.delete(remoteUserId);
         pendingCandidatesRef.current.delete(remoteUserId);
