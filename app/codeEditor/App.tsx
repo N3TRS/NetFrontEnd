@@ -78,6 +78,7 @@ const App = () => {
   );
 
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [colors, setColors] = useState<Record<string, string>>({});
   const [externalResult, setExternalResult] = useState<{
     run?: ExecutionRunPayload;
   } | null>(null);
@@ -100,6 +101,11 @@ const App = () => {
       setExternalResult(payload);
     },
     onPresence: (payload) => {
+      if (payload.colors) {
+        setColors((prev) => ({ ...prev, ...payload.colors }));
+      }
+      const colorFor = (email: string): string | undefined =>
+        payload.colors?.[email] ?? colors[email];
       // members[] is treated as additive (snapshot or partial — never authoritative).
       // Removals must arrive as an explicit { userEmail, status: 'offline' } delta.
       if (Array.isArray(payload.members)) {
@@ -108,14 +114,27 @@ const App = () => {
           const seen = new Set(prev.map((p) => p.email));
           const additions = incoming
             .filter((email) => !seen.has(email))
-            .map((email) => ({ email }));
-          return additions.length === 0 ? prev : [...prev, ...additions];
+            .map((email) => ({ email, color: colorFor(email) }));
+          const updated = prev.map((p) => ({
+            ...p,
+            color: colorFor(p.email) ?? p.color,
+          }));
+          return additions.length === 0 ? updated : [...updated, ...additions];
         });
       } else if (payload.userEmail && payload.status) {
         setParticipants((prev) => {
           if (payload.status === 'online') {
-            if (prev.some((p) => p.email === payload.userEmail)) return prev;
-            return [...prev, { email: payload.userEmail }];
+            if (prev.some((p) => p.email === payload.userEmail)) {
+              return prev.map((p) =>
+                p.email === payload.userEmail
+                  ? { ...p, color: colorFor(p.email) ?? p.color }
+                  : p,
+              );
+            }
+            return [
+              ...prev,
+              { email: payload.userEmail, color: colorFor(payload.userEmail) },
+            ];
           }
           return prev.filter((p) => p.email !== payload.userEmail);
         });
@@ -212,6 +231,7 @@ const App = () => {
                 sessionId={sessionId}
                 token={token}
                 userEmail={user?.email ?? null}
+                userColor={user?.email ? colors[user.email] ?? null : null}
                 language={language}
               />
             </Panel>

@@ -10,7 +10,11 @@ import {
   useState,
 } from "react";
 import * as Y from "yjs";
+import type { Awareness } from "y-protocols/awareness";
 import { createYjsClient, type YjsClient } from "../lib/yjsClient";
+import { getUserColor } from "../lib/userColor";
+import { useRemoteCursorStyles } from "../hooks/useRemoteCursorStyles";
+import { useRemoteNameLabels } from "../hooks/useRemoteNameLabels";
 import { LANGUAGE_VERSIONS } from "../Utils/constants";
 
 type Language = keyof typeof LANGUAGE_VERSIONS;
@@ -23,17 +27,24 @@ interface MonacoCanvasProps {
   sessionId: string | null;
   token: string | null;
   userEmail: string | null;
+  userColor: string | null;
   language: Language;
 }
 
 const YJS_WS_BASE = (process.env.NEXT_PUBLIC_URL_SESSIONS?.replace(/^https/, "wss").replace(/^http/, "ws") || "ws://localhost:3002") + "/ws/yjs";;
 
 export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
-  function MonacoCanvas({ sessionId, token, userEmail, language }, ref) {
+  function MonacoCanvas(
+    { sessionId, token, userEmail, userColor, language },
+    ref,
+  ) {
     const editorRef = useRef<MonacoEditorNs.IStandaloneCodeEditor | null>(null);
     const clientRef = useRef<YjsClient | null>(null);
     const ydocRef = useRef<Y.Doc | null>(null);
     const [editorReady, setEditorReady] = useState(false);
+    const [awareness, setAwareness] = useState<Awareness | null>(null);
+    const [ydocState, setYdocState] = useState<Y.Doc | null>(null);
+    const [ytext, setYtext] = useState<Y.Text | null>(null);
 
     useImperativeHandle(
       ref,
@@ -78,10 +89,16 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
           client.awareness,
         );
 
+        const identity = userEmail || "anonymous";
         client.awareness.setLocalStateField("user", {
-          name: userEmail || "anonymous",
-          color: "#22d3ee",
+          email: identity,
+          name: identity,
+          color: userColor ?? getUserColor(identity),
         });
+
+        setAwareness(client.awareness);
+        setYdocState(ydoc);
+        setYtext(type);
       })();
 
       return () => {
@@ -90,8 +107,29 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
         ydocRef.current?.destroy();
         clientRef.current = null;
         ydocRef.current = null;
+        setAwareness(null);
+        setYdocState(null);
+        setYtext(null);
       };
     }, [editorReady, sessionId, token, userEmail]);
+
+    useEffect(() => {
+      if (!awareness) return;
+      const identity = userEmail || "anonymous";
+      awareness.setLocalStateField("user", {
+        email: identity,
+        name: identity,
+        color: userColor ?? getUserColor(identity),
+      });
+    }, [awareness, userEmail, userColor]);
+
+    useRemoteCursorStyles(awareness);
+    useRemoteNameLabels({
+      editor: editorReady ? editorRef.current : null,
+      ydoc: ydocState,
+      ytext,
+      awareness,
+    });
 
     return (
       <div className="h-full w-full bg-secondary">
