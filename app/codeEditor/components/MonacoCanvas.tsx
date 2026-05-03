@@ -10,7 +10,11 @@ import {
   useState,
 } from "react";
 import * as Y from "yjs";
+import type { Awareness } from "y-protocols/awareness";
 import { createYjsClient, type YjsClient } from "../lib/yjsClient";
+import { getUserColor } from "../lib/userColor";
+import { useRemoteCursorStyles } from "../hooks/useRemoteCursorStyles";
+import { useRemoteNameLabels } from "../hooks/useRemoteNameLabels";
 import { LANGUAGE_VERSIONS } from "../Utils/constants";
 
 type Language = keyof typeof LANGUAGE_VERSIONS;
@@ -34,6 +38,9 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
     const clientRef = useRef<YjsClient | null>(null);
     const ydocRef = useRef<Y.Doc | null>(null);
     const [editorReady, setEditorReady] = useState(false);
+    const [awareness, setAwareness] = useState<Awareness | null>(null);
+    const [ydocState, setYdocState] = useState<Y.Doc | null>(null);
+    const [ytext, setYtext] = useState<Y.Text | null>(null);
 
     useImperativeHandle(
       ref,
@@ -78,10 +85,16 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
           client.awareness,
         );
 
+        const identity = userEmail || "anonymous";
         client.awareness.setLocalStateField("user", {
-          name: userEmail || "anonymous",
-          color: "#22d3ee",
+          email: identity,
+          name: identity,
+          color: getUserColor(identity),
         });
+
+        setAwareness(client.awareness);
+        setYdocState(ydoc);
+        setYtext(type);
       })();
 
       return () => {
@@ -90,8 +103,19 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
         ydocRef.current?.destroy();
         clientRef.current = null;
         ydocRef.current = null;
+        setAwareness(null);
+        setYdocState(null);
+        setYtext(null);
       };
     }, [editorReady, sessionId, token, userEmail]);
+
+    useRemoteCursorStyles(awareness);
+    useRemoteNameLabels({
+      editor: editorReady ? editorRef.current : null,
+      ydoc: ydocState,
+      ytext,
+      awareness,
+    });
 
     return (
       <div className="h-full w-full bg-secondary">

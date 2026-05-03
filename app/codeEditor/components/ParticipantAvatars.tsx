@@ -1,3 +1,5 @@
+import { getUserColor } from "../lib/userColor";
+
 export interface Participant {
   email: string;
 }
@@ -7,8 +9,6 @@ interface ParticipantAvatarsProps {
   max?: number;
 }
 
-const AVATAR_COLORS = ["#7C3AED", "#F97316", "#2563EB", "#16A34A"];
-
 function initials(email: string): string {
   const local = email.split("@")[0] || email;
   const parts = local.split(/[._-]+/).filter(Boolean);
@@ -16,14 +16,6 @@ function initials(email: string): string {
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
   return local.slice(0, 2).toUpperCase() || "??";
-}
-
-function hash(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i += 1) {
-    h = (h * 31 + s.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
 }
 
 export function ParticipantAvatars({
@@ -42,8 +34,7 @@ export function ParticipantAvatars({
           aria-label={p.email}
           className="grid size-6 place-items-center rounded-full text-[10px] font-semibold text-white ring-2 ring-secondary"
           style={{
-            backgroundColor:
-              AVATAR_COLORS[hash(p.email) % AVATAR_COLORS.length],
+            backgroundColor: getUserColor(p.email),
             marginLeft: i === 0 ? 0 : -8,
           }}
         >
