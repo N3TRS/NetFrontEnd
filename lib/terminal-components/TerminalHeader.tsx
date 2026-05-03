@@ -21,40 +21,59 @@ export default function TerminalHeader({ status }: TerminalHeaderProps) {
 
   return (
     <div
-      className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-4 sm:px-6 sm:py-4 border-b md:gap-3 transition-theme"
+      className="flex items-center justify-between px-4 py-3 border-b"
       style={{
         backgroundColor: baseStyles.backgroundColor,
         borderBottomColor: baseStyles.borderColor,
       }}
     >
-      <div className="flex items-center gap-3 w-full sm:w-auto">
-        <div
-          className={`w-3 h-3 rounded-full shrink-0 ${getStatusAnimation()}`}
-          style={{ color: getStatusColor() }}
-          aria-label={`Estado: ${getStatusText()}`}
-          role="status"
-        ></div>
-        <span
-          className="font-jetbrains-mono font-bold text-base sm:text-lg transition-theme"
-          style={{ color: getStatusColor() }}
-        >
-          Omnicode Terminal System V1.0
-        </span>
+      {/* Left: window dots + status indicator + title */}
+      <div className="flex items-center gap-3">
+        {/* Decorative macOS-style window dots */}
+        <div className="flex items-center gap-1.5" aria-hidden>
+          <div className="h-3 w-3 rounded-full bg-red-500/75" />
+          <div className="h-3 w-3 rounded-full bg-yellow-500/75" />
+          <div className="h-3 w-3 rounded-full bg-green-500/75" />
+        </div>
+
+        <div className="h-4 w-px bg-white/10" aria-hidden />
+
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusAnimation()}`}
+            style={{ backgroundColor: getStatusColor() }}
+            aria-label={`Estado: ${getStatusText()}`}
+            role="status"
+          />
+          <span
+            className="font-jetbrains-mono font-semibold text-sm tracking-tight"
+            style={{ color: 'var(--terminal-text-primary)' }}
+          >
+            Omnicode Terminal System{" "}
+            <span style={{ color: 'var(--terminal-text-secondary)', fontWeight: 400 }}>V1.0</span>
+          </span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-0 w-full sm:w-auto">
+      {/* Right: status badge + settings */}
+      <div className="flex items-center gap-2">
         <div
-          className="font-jetbrains-mono text-xs sm:text-sm font-semibold transition-theme"
-          style={{ color: getStatusColor() }}
+          className="font-jetbrains-mono text-[11px] font-bold px-2.5 py-1 rounded-md tracking-wider"
+          style={{
+            color: getStatusColor(),
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
           aria-live="polite"
           aria-atomic="true"
         >
           {getStatusText()}
         </div>
+
         <button
-          className="transition-theme p-2 rounded focus-ring"
+          className="p-1.5 rounded-md transition-colors focus-ring"
           aria-label="Abrir configuración de terminal"
-          style={textSecondary}
+          style={{ color: textSecondary.color }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor = secondaryStyles.backgroundColor
           }}
@@ -62,10 +81,9 @@ export default function TerminalHeader({ status }: TerminalHeaderProps) {
             e.currentTarget.style.backgroundColor = 'transparent'
           }}
         >
-          <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
+          <Settings className="w-4 h-4" />
         </button>
       </div>
     </div>
   )
 }
-

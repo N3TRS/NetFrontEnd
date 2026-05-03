@@ -1,6 +1,7 @@
 "use client";
 
 import { Play, Save, Terminal, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LanguageBadge } from "./LanguageBadge";
 import {
@@ -34,14 +35,14 @@ export function EditorHeader({
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-secondary px-4">
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2 transition-opacity hover:opacity-80">
           <div className="rounded-md bg-primary p-1 text-primary-foreground">
             <Terminal className="size-4" strokeWidth={2.5} aria-hidden />
           </div>
           <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-base font-bold tracking-tight text-transparent">
             OmniCode
           </span>
-        </div>
+        </Link>
 
         <div className="h-5 w-px bg-white/10" aria-hidden />
 

@@ -31,7 +31,7 @@ export default function Sessions() {
     setMessage(null);
 
     try {
-      const data = await createSession(token, name.trim(), "javascript");
+      const data = await createSession(token, name.trim(), "typescript");
       const sessionId = data?.session?.id;
       const createdInviteCode = data?.session?.inviteCode;
 

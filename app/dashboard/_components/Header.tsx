@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Terminal, UserCircle, LogOut } from "lucide-react";
+import { Layers, Terminal, UserCircle, LogOut } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,16 +39,17 @@ export default function NavBar() {
           </span>
         </Link>
 
-        <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden items-center gap-8 text-sm font-medium opacity-80 md:flex">
-          <a href="/dashboard/sessions" className="transition-colors hover:text-primary">
+        <nav className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden items-center gap-8 text-sm md:flex">
+          <Link href="/sessions" className="flex items-center gap-1.5 font-semibold text-primary transition-colors hover:text-primary/80">
+            <Layers className="h-3.5 w-3.5" />
             Sesiones
-          </a>
+          </Link>
         </nav>
 
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((prev) => !prev)}
-            className="cursor-pointer rounded-full focus:outline-none"
+            className="cursor-pointer rounded-full p-0.5 ring-2 ring-transparent transition-all duration-200 hover:ring-primary/50 hover:ring-offset-2 hover:ring-offset-[#0a0e14] focus:outline-none"
             aria-label="Menú de usuario"
           >
             {user?.avatarUrl ? (
@@ -60,7 +61,7 @@ export default function NavBar() {
                 className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <UserCircle className="h-10 w-10 text-muted-foreground" />
+              <UserCircle className="h-10 w-10 text-muted-foreground transition-colors hover:text-white" />
             )}
           </button>
 

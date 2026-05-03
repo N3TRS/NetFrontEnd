@@ -10,15 +10,17 @@ import {
   Maximize2,
   Minimize2,
   PhoneOff,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface VideoCallProps {
   onEndCall: () => void | Promise<void>;
+  onAddToCall?: () => void;
+  currentUserLabel?: string;
 }
 
-// Genera color de avatar por userId
 function avatarColor(userId: string) {
   const colors = [
     "bg-violet-600",
@@ -37,6 +39,13 @@ function initials(label: string) {
   return label.slice(0, 2).toUpperCase();
 }
 
+function displayName(email: string): string {
+  const local = email.includes('@') ? email.split('@')[0] : email;
+  return local
+    .replace(/[._]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 interface ParticipantTileProps {
   label: string;
   userId: string;
@@ -44,6 +53,7 @@ interface ParticipantTileProps {
   isMuted?: boolean;
   isVideoOff?: boolean;
   isSpeaking?: boolean;
+  stream?: MediaStream;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
 }
 
@@ -54,9 +64,31 @@ function ParticipantTile({
   isMuted,
   isVideoOff,
   isSpeaking,
-  videoRef,
+  stream,
+  videoRef: externalVideoRef,
 }: ParticipantTileProps) {
+  const internalVideoRef = useRef<HTMLVideoElement>(null);
   const color = avatarColor(userId);
+
+  // Set srcObject whenever stream changes or video becomes visible again.
+  // isVideoOff is intentionally in deps: when the element goes from hidden→visible
+  // the browser may need play() called again (especially Safari).
+  useEffect(() => {
+    if (isLocal) return;
+    const el = internalVideoRef.current;
+    if (!el || !stream) return;
+
+    el.srcObject = stream;
+    el.play().catch(() => {});
+
+    // If a video track arrives after the audio track (same stream object, no re-render),
+    // calling play() again ensures the element picks it up.
+    const onAddTrack = () => el.play().catch(() => {});
+    stream.addEventListener('addtrack', onAddTrack);
+    return () => stream.removeEventListener('addtrack', onAddTrack);
+  }, [stream, isLocal, isVideoOff]);
+
+  const videoRef = isLocal ? externalVideoRef : internalVideoRef;
 
   return (
     <div
@@ -65,18 +97,16 @@ function ParticipantTile({
         isSpeaking && "ring-2 ring-green-500 ring-offset-2 ring-offset-black"
       )}
     >
-      {/* Video o Avatar */}
-      {!isVideoOff ? (
-        <video
-          ref={videoRef}
-          data-user-id={!isLocal ? userId : undefined}
-          autoPlay
-          muted={isLocal}
-          playsInline
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-2">
+      {/* Always keep <video> in the DOM so audio keeps playing when video is off */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted={!!isLocal}
+        playsInline
+        className={cn("h-full w-full object-cover", isVideoOff && "hidden")}
+      />
+      {isVideoOff && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
           <div
             className={cn(
               "flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold text-white",
@@ -89,7 +119,6 @@ function ParticipantTile({
         </div>
       )}
 
-      {/* Badge: nombre */}
       <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-xs text-white backdrop-blur-sm">
         {isLocal && isMuted && (
           <MicOff className="h-3 w-3 text-red-400" />
@@ -100,7 +129,6 @@ function ParticipantTile({
         {label}
       </div>
 
-      {/* Badge: muted remoto */}
       {!isLocal && isMuted && (
         <div className="absolute right-2 top-2 rounded-md bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300 ring-1 ring-red-500/40">
           Mic off
@@ -110,7 +138,26 @@ function ParticipantTile({
   );
 }
 
-export function VideoCall({ onEndCall }: VideoCallProps) {
+// Small component so the minimized remote tile also gets a stable ref + effect.
+function MiniRemoteVideo({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !stream) return;
+
+    el.srcObject = stream;
+    el.play().catch(() => {});
+
+    const onAddTrack = () => el.play().catch(() => {});
+    stream.addEventListener('addtrack', onAddTrack);
+    return () => stream.removeEventListener('addtrack', onAddTrack);
+  }, [stream]);
+
+  return <video ref={ref} autoPlay playsInline className="h-full w-full object-cover" />;
+}
+
+export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCallProps) {
   const {
     isInCall,
     localStream,
@@ -121,10 +168,6 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     toggleVideo,
   } = useCallStore();
 
-  const remoteStreams = new Map<string, MediaStream>(
-    remoteStreamsList.map((s) => [s.userId, s.stream])
-  );
-
   const [isMinimized, setIsMinimized] = useState(true);
   const [position, setPosition] = useState({ x: 20, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
@@ -134,10 +177,9 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const remoteParticipants = Array.from(remoteStreams.entries()) as [string, MediaStream][];
-  const totalParticipants = remoteParticipants.length + 1; // +1 = yo
+  const remoteParticipants = remoteStreamsList as { userId: string; stream: MediaStream }[];
+  const totalParticipants = remoteParticipants.length + 1;
 
-  // Reloj de duración
   useEffect(() => {
     if (!isInCall) return;
     const interval = setInterval(() => setCallDuration((d) => d + 1), 1000);
@@ -150,27 +192,13 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     return `${m}:${s}`;
   };
 
-  // Local video
+  // Local video: re-assign when stream changes or video element re-mounts (isVideoOff toggle).
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(() => {});
     }
-  }, [localStream, isMinimized]);
-
-  // Remote videos
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      remoteStreams.forEach((stream, userId) => {
-        document.querySelectorAll<HTMLVideoElement>(`[data-user-id="${userId}"]`).forEach((el) => {
-          if (el.srcObject !== stream) {
-            el.srcObject = stream;
-            el.play().catch(() => {});
-          }
-        });
-      });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [remoteStreams, isMinimized]);
+  }, [localStream, isMinimized, isVideoOff]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (
@@ -198,8 +226,10 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
 
   if (!isInCall) return null;
 
-  // Minimized Screen
+  // ── Minimized ──────────────────────────────────────────────────────────────
   if (isMinimized) {
+    const firstRemote = remoteParticipants[0];
+
     return (
       <div
         ref={containerRef}
@@ -210,12 +240,10 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         )}
         onMouseDown={handleMouseDown}
       >
-        {/* Header mini */}
         <div className="drag-handle flex cursor-move items-center justify-between border-b border-white/10 bg-[#1a1a1a] px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-green-500" />
             <span className="text-sm font-medium text-white">En llamada</span>
-            {/* ← contador dinámico */}
             <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/70">
               <Users className="h-3 w-3" />
               {totalParticipants}
@@ -232,27 +260,35 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           </div>
         </div>
 
-        {/* Grid mini: yo + primer remoto */}
         <div className="grid grid-cols-2 gap-1 bg-black p-1">
+          {/* Local tile */}
           <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0d1117]">
-            {!isVideoOff ? (
-              <video ref={localVideoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white", avatarColor("local"))}>
-                  Yo
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              className={cn("h-full w-full object-cover", isVideoOff && "hidden")}
+            />
+            {isVideoOff && (
+              <div className="absolute inset-0 flex h-full items-center justify-center">
+                <div className={cn("flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white", avatarColor(currentUserLabel || "local"))}>
+                  {currentUserLabel ? initials(displayName(currentUserLabel)) : "Yo"}
                 </div>
               </div>
             )}
             <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">
-              {isMuted && <MicOff className="inline h-2.5 w-2.5 text-red-400" />} Tú
+              {isMuted && <MicOff className="inline h-2.5 w-2.5 text-red-400" />} {currentUserLabel ? displayName(currentUserLabel) : "Tú"} <span className="text-white/50">(Tú)</span>
             </div>
           </div>
 
-          {remoteParticipants.length > 0 ? (
+          {/* First remote tile — MiniRemoteVideo uses its own ref+effect */}
+          {firstRemote ? (
             <div className="relative aspect-video overflow-hidden rounded-lg bg-[#0d1117]">
-              <video data-user-id={remoteParticipants[0][0]} autoPlay playsInline className="h-full w-full object-cover" />
-              <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">P1</div>
+              <MiniRemoteVideo stream={firstRemote.stream} />
+              <div className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 text-[10px] text-white">
+                {displayName(firstRemote.userId)}
+              </div>
             </div>
           ) : (
             <div className="flex aspect-video items-center justify-center rounded-lg bg-[#0d1117] text-white/30">
@@ -260,7 +296,6 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
             </div>
           )}
 
-          {/* Indicador de más participantes */}
           {remoteParticipants.length > 1 && (
             <div className="col-span-2 flex items-center justify-center gap-1 py-0.5 text-[11px] text-white/40">
               <Users className="h-3 w-3" />
@@ -269,7 +304,6 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           )}
         </div>
 
-        {/* Controles mini */}
         <div className="flex items-center justify-center gap-2 border-t border-white/10 bg-[#1a1a1a] px-3 py-2">
           <button
             onClick={toggleMute}
@@ -289,6 +323,15 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
           >
             {isVideoOff ? <VideoOff className="h-4 w-4 text-white" /> : <VideoIcon className="h-4 w-4 text-white" />}
           </button>
+          {onAddToCall && (
+            <button
+              onClick={onAddToCall}
+              title="Añadir participantes"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"
+            >
+              <UserPlus className="h-4 w-4 text-white" />
+            </button>
+          )}
           <button
             onClick={onEndCall}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 transition-colors hover:bg-red-600"
@@ -300,8 +343,7 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
     );
   }
 
-  //MAXIMIZED ScREEN
-  // Layout adaptativo según número de participantes
+  // ── Maximized ──────────────────────────────────────────────────────────────
   const gridClass = cn(
     "grid h-full w-full gap-2",
     totalParticipants === 1 && "grid-cols-1",
@@ -313,12 +355,10 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
-      {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 bg-[#111] px-4 py-3">
         <div className="flex items-center gap-3">
           <span className="h-2.5 w-2.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]" />
           <h2 className="text-base font-semibold text-white">Llamada en curso</h2>
-          {/* ← contador dinámico */}
           <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/70">
             <Users className="h-3.5 w-3.5" />
             {totalParticipants} participante{totalParticipants !== 1 ? "s" : ""}
@@ -337,29 +377,26 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         </div>
       </div>
 
-      {/* Grid de videos */}
       <div className="flex flex-1 overflow-hidden p-3">
         <div className={gridClass}>
-          {/* Yo */}
           <ParticipantTile
-            label={`Tú${isMuted ? " · Silenciado" : ""}${isVideoOff ? " · Sin cámara" : ""}`}
-            userId="local"
+            label={`${currentUserLabel ? displayName(currentUserLabel) : "Tú"} (Tú)${isMuted ? " · Silenciado" : ""}${isVideoOff ? " · Sin cámara" : ""}`}
+            userId={currentUserLabel || "local"}
             isLocal
             isMuted={isMuted}
             isVideoOff={isVideoOff}
             videoRef={localVideoRef}
           />
 
-          {/* Remotos */}
-          {remoteParticipants.map(([userId], index) => (
+          {remoteParticipants.map(({ userId, stream }) => (
             <ParticipantTile
               key={userId}
-              label={`Participante ${index + 1}`}
+              label={displayName(userId)}
               userId={userId}
+              stream={stream}
             />
           ))}
 
-          {/* Placeholder si estoy solo */}
           {remoteParticipants.length === 0 && (
             <div className="flex items-center justify-center rounded-xl bg-[#0d1117] text-white/30">
               <div className="text-center">
@@ -373,7 +410,6 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         </div>
       </div>
 
-      {/* Controles */}
       <div className="flex items-center justify-center gap-4 border-t border-white/10 bg-[#111] px-4 py-4">
         <button
           onClick={toggleMute}
@@ -396,6 +432,16 @@ export function VideoCall({ onEndCall }: VideoCallProps) {
         >
           {isVideoOff ? <VideoOff className="h-5 w-5 text-white" /> : <VideoIcon className="h-5 w-5 text-white" />}
         </button>
+
+        {onAddToCall && (
+          <button
+            onClick={onAddToCall}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 transition-all hover:bg-white/25"
+            title="Añadir participantes"
+          >
+            <UserPlus className="h-5 w-5 text-white" />
+          </button>
+        )}
 
         <button
           onClick={onEndCall}

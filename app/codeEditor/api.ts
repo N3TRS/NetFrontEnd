@@ -84,7 +84,7 @@ export const deleteSession = (
 export const createSession = (
   token: string,
   name: string,
-  language: keyof typeof LANGUAGE_VERSIONS = 'javascript',
+  language: keyof typeof LANGUAGE_VERSIONS = 'typescript',
 ): Promise<{ session: SessionSummary }> =>
   request('/v1/sessions', {
     method: 'POST',
@@ -143,7 +143,7 @@ export async function analyzeCode(
   prompt: string,
   code: string,
 ): Promise<AnalyzeResponse> {
-  const res = await fetch(`${SESSIONS_API_BASE}/analyze`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt, code }),

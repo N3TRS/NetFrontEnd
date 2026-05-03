@@ -35,7 +35,6 @@ type ExecutionRunPayload = {
 };
 
 const RUNNERS: Record<Language, string> = {
-  javascript: "node",
   typescript: "ts-node",
   python: "python",
   java: "java",
@@ -43,7 +42,7 @@ const RUNNERS: Record<Language, string> = {
 
 function resolveLanguage(value: string | null): Language {
   if (value && value in LANGUAGE_VERSIONS) return value as Language;
-  return "javascript";
+  return "typescript";
 }
 
 function deriveFilename(name: string, language: Language): string {
@@ -84,13 +83,14 @@ const App = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
-  const [callModalOpen, setCallModalOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
-  const { isInCall, isIncomingCall } = useCallStore();
+  const { isInCall, isIncomingCall, joinableCall, currentCall } = useCallStore();
   const userEmail = user?.email;
-  const { startCall, acceptCall, rejectCall, endCall } = useWebRTC(userEmail || '');
+  const { startCall, acceptCall, rejectCall, leaveCall, joinCall, inviteToCall } =
+    useWebRTC(userEmail || '', token);
+  const [callModalMode, setCallModalMode] = useState<'start' | 'invite' | null>(null);
 
   useSessionSocket({
     token,
@@ -100,10 +100,25 @@ const App = () => {
       setExternalResult(payload);
     },
     onPresence: (payload) => {
+      // members[] is treated as additive (snapshot or partial — never authoritative).
+      // Removals must arrive as an explicit { userEmail, status: 'offline' } delta.
       if (Array.isArray(payload.members)) {
-        setParticipants(payload.members.map((email) => ({ email })));
-      } else if (typeof payload.participantsOnline === "number" && user?.email) {
-        setParticipants([{ email: user.email }]);
+        const incoming = payload.members;
+        setParticipants((prev) => {
+          const seen = new Set(prev.map((p) => p.email));
+          const additions = incoming
+            .filter((email) => !seen.has(email))
+            .map((email) => ({ email }));
+          return additions.length === 0 ? prev : [...prev, ...additions];
+        });
+      } else if (payload.userEmail && payload.status) {
+        setParticipants((prev) => {
+          if (payload.status === 'online') {
+            if (prev.some((p) => p.email === payload.userEmail)) return prev;
+            return [...prev, { email: payload.userEmail }];
+          }
+          return prev.filter((p) => p.email !== payload.userEmail);
+        });
       }
     },
   });
@@ -175,8 +190,9 @@ const App = () => {
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
-          onToggleCall={() => setCallModalOpen(true)}
-
+          onToggleCall={() => setCallModalMode(isInCall ? 'invite' : 'start')}
+          joinableCall={joinableCall}
+          onJoinCall={joinCall}
         />
 
         {aiPanelOpen && (
@@ -220,17 +236,31 @@ const App = () => {
       </div>
 
       <CallModal
-        open={callModalOpen}
-        onClose={() => setCallModalOpen(false)}
-        onStartCall={(emails) => {
-          startCall(emails);
-          setCallModalOpen(false);
+        open={callModalMode !== null}
+        onClose={() => setCallModalMode(null)}
+        onSubmit={(emails) => {
+          if (callModalMode === 'invite') {
+            void inviteToCall(emails);
+          } else {
+            void startCall(emails);
+          }
+          setCallModalMode(null);
         }}
         currentUserId={userEmail || ""}
         sessionId={sessionId}
         token={token}
+        mode={callModalMode ?? 'start'}
+        excludeEmails={
+          callModalMode === 'invite' && currentCall ? currentCall.participants : []
+        }
       />
-      {isInCall && <VideoCall onEndCall={endCall} />}
+      {isInCall && (
+        <VideoCall
+          onEndCall={leaveCall}
+          onAddToCall={() => setCallModalMode('invite')}
+          currentUserLabel={userEmail || ''}
+        />
+      )}
       {isIncomingCall && (
         <IncomingCallDialog
           onAcceptCall={acceptCall}
