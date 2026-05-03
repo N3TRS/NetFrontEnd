@@ -9,6 +9,7 @@ type PresencePayload = {
   status: "online" | "offline";
   members?: string[];
   participantsOnline?: number;
+  colors?: Record<string, string>;
 };
 
 type ExecutionPayload = {

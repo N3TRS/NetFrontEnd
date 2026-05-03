@@ -110,11 +110,14 @@ export function useRemoteNameLabels({
       });
     };
 
+    const onYtext = () => schedule();
     awareness.on("change", schedule);
+    ytext.observe(onYtext);
     schedule();
 
     return () => {
       awareness.off("change", schedule);
+      ytext.unobserve(onYtext);
       if (raf) cancelAnimationFrame(raf);
       for (const id of Array.from(widgets.keys())) remove(id);
     };

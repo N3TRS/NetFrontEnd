@@ -2,6 +2,7 @@ import { getUserColor } from "../lib/userColor";
 
 export interface Participant {
   email: string;
+  color?: string;
 }
 
 interface ParticipantAvatarsProps {
@@ -34,7 +35,7 @@ export function ParticipantAvatars({
           aria-label={p.email}
           className="grid size-6 place-items-center rounded-full text-[10px] font-semibold text-white ring-2 ring-secondary"
           style={{
-            backgroundColor: getUserColor(p.email),
+            backgroundColor: p.color ?? getUserColor(p.email),
             marginLeft: i === 0 ? 0 : -8,
           }}
         >
