@@ -28,6 +28,7 @@ interface MonacoCanvasProps {
   token: string | null;
   userEmail: string | null;
   userColor: string | null;
+  canEdit: boolean;
   language: Language;
 }
 
@@ -35,7 +36,7 @@ const YJS_WS_BASE = (process.env.NEXT_PUBLIC_URL_SESSIONS?.replace(/^https/, "ws
 
 export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
   function MonacoCanvas(
-    { sessionId, token, userEmail, userColor, language },
+    { sessionId, token, userEmail, userColor, canEdit, language },
     ref,
   ) {
     const editorRef = useRef<MonacoEditorNs.IStandaloneCodeEditor | null>(null);
@@ -146,6 +147,7 @@ export const MonacoCanvas = forwardRef<MonacoCanvasHandle, MonacoCanvasProps>(
             scrollBeyondLastLine: false,
             renderLineHighlight: "none",
             padding: { top: 12, bottom: 12 },
+            readOnly: !canEdit,
           }}
         />
       </div>

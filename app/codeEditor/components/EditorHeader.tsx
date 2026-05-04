@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Save, Terminal, UserPlus } from "lucide-react";
+import { Play, Save, ShieldCheck, Terminal, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LanguageBadge } from "./LanguageBadge";
@@ -16,9 +16,11 @@ interface EditorHeaderProps {
   isSaving: boolean;
   isRunning: boolean;
   canRun: boolean;
+  canSaveSnapshot: boolean;
   onInvite: () => void;
   onSave: () => void;
   onRun: () => void;
+  onOpenRoles: () => void;
 }
 
 export function EditorHeader({
@@ -28,9 +30,11 @@ export function EditorHeader({
   isSaving,
   isRunning,
   canRun,
+  canSaveSnapshot,
   onInvite,
   onSave,
   onRun,
+  onOpenRoles,
 }: EditorHeaderProps) {
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-secondary px-4">
@@ -60,6 +64,18 @@ export function EditorHeader({
         <Button
           variant="ghost"
           size="sm"
+          onClick={onOpenRoles}
+          className="cursor-pointer text-white hover:bg-white/5 hover:text-white"
+          aria-label="Permissions"
+          title="Permissions"
+        >
+          <ShieldCheck className="size-4" aria-hidden />
+          Permissions
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={onInvite}
           className="cursor-pointer text-white hover:bg-white/5 hover:text-white"
         >
@@ -70,7 +86,7 @@ export function EditorHeader({
         <Button
           size="sm"
           onClick={onSave}
-          disabled={isSaving}
+          disabled={isSaving || !canSaveSnapshot}
           className="cursor-pointer bg-accent text-white hover:bg-accent/85"
         >
           <Save className="size-4" aria-hidden />
