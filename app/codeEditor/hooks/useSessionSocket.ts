@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import type { PermissionLevel } from "../lib/permissions";
 
 type PresencePayload = {
   sessionId: string;
@@ -10,6 +11,15 @@ type PresencePayload = {
   members?: string[];
   participantsOnline?: number;
   colors?: Record<string, string>;
+  roles?: Record<string, PermissionLevel>;
+};
+
+type RoleUpdatedPayload = {
+  sessionId: string;
+  userEmail: string;
+  role: PermissionLevel;
+  changedBy: string;
+  timestamp: number;
 };
 
 type ExecutionPayload = {
@@ -31,6 +41,7 @@ interface UseSessionSocketOptions {
   sessionId: string | null;
   onExecutionResult?: (payload: ExecutionPayload) => void;
   onPresence?: (payload: PresencePayload) => void;
+  onRoleUpdated?: (payload: RoleUpdatedPayload) => void;
 }
 
 export function useSessionSocket({
@@ -38,11 +49,13 @@ export function useSessionSocket({
   sessionId,
   onExecutionResult,
   onPresence,
+  onRoleUpdated,
 }: UseSessionSocketOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const executionRef = useRef(onExecutionResult);
   const presenceRef = useRef(onPresence);
+  const roleUpdatedRef = useRef(onRoleUpdated);
 
   useEffect(() => {
     executionRef.current = onExecutionResult;
@@ -51,6 +64,10 @@ export function useSessionSocket({
   useEffect(() => {
     presenceRef.current = onPresence;
   }, [onPresence]);
+
+  useEffect(() => {
+    roleUpdatedRef.current = onRoleUpdated;
+  }, [onRoleUpdated]);
 
   const socketBaseUrl = useMemo(() => {
     return process.env.NEXT_PUBLIC_URL_SESSIONS || "http://localhost:3002";
@@ -85,6 +102,10 @@ export function useSessionSocket({
 
     socket.on("execution.result", (payload: ExecutionPayload) => {
       executionRef.current?.(payload);
+    });
+
+    socket.on("session.roleUpdated", (payload: RoleUpdatedPayload) => {
+      roleUpdatedRef.current?.(payload);
     });
 
     return () => {

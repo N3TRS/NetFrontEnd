@@ -1,4 +1,5 @@
 import { LANGUAGE_VERSIONS, PISTON_LANGUAGE_MAP } from './Utils/constants';
+import type { PermissionLevel } from './lib/permissions';
 
 const SESSIONS_API_BASE =
   process.env.NEXT_PUBLIC_URL_SESSIONS || 'http://localhost:3002';
@@ -59,10 +60,38 @@ export interface SessionSummary {
   updatedAt: string;
 }
 
+export interface SessionParticipantRecord {
+  userEmail: string;
+  role?: PermissionLevel | null;
+  joinedAt?: string;
+}
+
+export interface SessionDetailResponse {
+  session: SessionSummary;
+  participants: SessionParticipantRecord[];
+}
+
 export const listSessions = (
   token: string,
 ): Promise<{ sessions: SessionSummary[] }> =>
   request('/v1/sessions', { method: 'GET', token });
+
+export const getSession = (
+  token: string,
+  sessionId: string,
+): Promise<SessionDetailResponse> =>
+  request(`/v1/sessions/${sessionId}`, { method: 'GET', token });
+
+export const updateParticipantRole = (
+  token: string,
+  sessionId: string,
+  userEmail: string,
+  role: Exclude<PermissionLevel, 'OWNER'>,
+): Promise<{ participant: SessionParticipantRecord }> =>
+  request(
+    `/v1/sessions/${sessionId}/participants/${encodeURIComponent(userEmail)}/role`,
+    { method: 'PATCH', token, body: { role } },
+  );
 
 export const renameSession = (
   token: string,

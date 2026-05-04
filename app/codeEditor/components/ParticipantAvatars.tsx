@@ -1,8 +1,10 @@
+import type { PermissionLevel } from "../lib/permissions";
 import { getUserColor } from "../lib/userColor";
 
 export interface Participant {
   email: string;
   color?: string;
+  role?: PermissionLevel;
 }
 
 interface ParticipantAvatarsProps {

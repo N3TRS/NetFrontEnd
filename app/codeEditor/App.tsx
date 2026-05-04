@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
-import { saveSessionSnapshot } from "./api";
+import {
+  getSession,
+  saveSessionSnapshot,
+  updateParticipantRole,
+} from "./api";
+import type { PermissionLevel } from "./lib/permissions";
+import { useSessionPermissions } from "./hooks/useSessionPermissions";
+import { SessionRolesModal } from "./components/SessionRolesModal";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
 import { useSessionSocket } from "./hooks/useSessionSocket";
 import { useCodeExecution } from "./hooks/useCodeExecution";
@@ -79,12 +86,46 @@ const App = () => {
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
+  const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
+  const [rolesModalOpen, setRolesModalOpen] = useState(false);
   const [externalResult, setExternalResult] = useState<{
     run?: ExecutionRunPayload;
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+
+  useEffect(() => {
+    if (!token || !sessionId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const detail = await getSession(token, sessionId);
+        if (cancelled) return;
+        setOwnerEmail(detail.session.ownerEmail);
+        setParticipants((prev) => {
+          const map = new Map(prev.map((p) => [p.email, p]));
+          for (const dp of detail.participants) {
+            const existing = map.get(dp.userEmail);
+            map.set(dp.userEmail, {
+              email: dp.userEmail,
+              color: existing?.color,
+              role:
+                dp.userEmail === detail.session.ownerEmail
+                  ? "OWNER"
+                  : (dp.role ?? "VIEW"),
+            });
+          }
+          return Array.from(map.values());
+        });
+      } catch {
+        // network errors handled elsewhere; permissions fall back to VIEW
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, sessionId]);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
   const { isInCall, isIncomingCall, joinableCall, currentCall } = useCallStore();
@@ -106,6 +147,8 @@ const App = () => {
       }
       const colorFor = (email: string): string | undefined =>
         payload.colors?.[email] ?? colors[email];
+      const roleFor = (email: string): PermissionLevel | undefined =>
+        payload.roles?.[email];
       // members[] is treated as additive (snapshot or partial — never authoritative).
       // Removals must arrive as an explicit { userEmail, status: 'offline' } delta.
       if (Array.isArray(payload.members)) {
@@ -114,10 +157,15 @@ const App = () => {
           const seen = new Set(prev.map((p) => p.email));
           const additions = incoming
             .filter((email) => !seen.has(email))
-            .map((email) => ({ email, color: colorFor(email) }));
+            .map((email) => ({
+              email,
+              color: colorFor(email),
+              role: roleFor(email),
+            }));
           const updated = prev.map((p) => ({
             ...p,
             color: colorFor(p.email) ?? p.color,
+            role: roleFor(p.email) ?? p.role,
           }));
           return additions.length === 0 ? updated : [...updated, ...additions];
         });
@@ -127,19 +175,46 @@ const App = () => {
             if (prev.some((p) => p.email === payload.userEmail)) {
               return prev.map((p) =>
                 p.email === payload.userEmail
-                  ? { ...p, color: colorFor(p.email) ?? p.color }
+                  ? {
+                      ...p,
+                      color: colorFor(p.email) ?? p.color,
+                      role: roleFor(p.email) ?? p.role,
+                    }
                   : p,
               );
             }
             return [
               ...prev,
-              { email: payload.userEmail, color: colorFor(payload.userEmail) },
+              {
+                email: payload.userEmail,
+                color: colorFor(payload.userEmail),
+                role: roleFor(payload.userEmail),
+              },
             ];
           }
           return prev.filter((p) => p.email !== payload.userEmail);
         });
       }
     },
+    onRoleUpdated: (payload) => {
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.email === payload.userEmail ? { ...p, role: payload.role } : p,
+        ),
+      );
+    },
+  });
+
+  const myRole = useMemo(
+    () =>
+      participants.find((p) => p.email === user?.email)?.role ?? null,
+    [participants, user?.email],
+  );
+
+  const permissions = useSessionPermissions({
+    ownerEmail,
+    userEmail: user?.email ?? null,
+    role: myRole,
   });
 
   const { lines, isRunning, run, pushLog } = useCodeExecution({
@@ -150,14 +225,39 @@ const App = () => {
     externalResult,
   });
 
+  const handleRoleChange = useCallback(
+    async (targetEmail: string, role: Exclude<PermissionLevel, "OWNER">) => {
+      if (!token || !sessionId) return;
+      try {
+        await updateParticipantRole(token, sessionId, targetEmail, role);
+        setParticipants((prev) =>
+          prev.map((p) => (p.email === targetEmail ? { ...p, role } : p)),
+        );
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Could not update role";
+        pushLog(message, "fail");
+      }
+    },
+    [token, sessionId, pushLog],
+  );
+
   const handleGetCode = useCallback(() => canvasRef.current?.getCode() ?? "", []);
 
   const handleRun = useCallback(() => {
+    if (!permissions.canExecute) {
+      pushLog("You do not have permission to run code", "fail");
+      return;
+    }
     const code = canvasRef.current?.getCode() ?? "";
     void run(code);
-  }, [run]);
+  }, [run, permissions.canExecute, pushLog]);
 
   const handleSave = useCallback(async () => {
+    if (!permissions.canSave) {
+      pushLog("You do not have permission to save", "fail");
+      return;
+    }
     if (!token || !sessionId) {
       pushLog("No active session to save", "fail");
       return;
@@ -174,7 +274,7 @@ const App = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [language, pushLog, sessionId, token]);
+  }, [language, permissions.canSave, pushLog, sessionId, token]);
 
   const handleInvite = useCallback(() => {
     if (!inviteCode) {
@@ -197,10 +297,12 @@ const App = () => {
         participants={participants}
         isSaving={isSaving}
         isRunning={isRunning}
-        canRun={Boolean(token && sessionId)}
+        canRun={Boolean(token && sessionId) && permissions.canExecute}
+        canSaveSnapshot={permissions.canSave}
         onInvite={handleInvite}
         onSave={handleSave}
         onRun={handleRun}
+        onOpenRoles={() => setRolesModalOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -232,6 +334,7 @@ const App = () => {
                 token={token}
                 userEmail={user?.email ?? null}
                 userColor={user?.email ? colors[user.email] ?? null : null}
+                canEdit={permissions.canEdit}
                 language={language}
               />
             </Panel>
@@ -287,6 +390,16 @@ const App = () => {
           onRejectCall={rejectCall}
         />
       )}
+
+      <SessionRolesModal
+        open={rolesModalOpen}
+        participants={participants}
+        ownerEmail={ownerEmail}
+        currentUserEmail={user?.email ?? null}
+        canChangeRoles={permissions.canChangeRoles}
+        onClose={() => setRolesModalOpen(false)}
+        onChangeRole={handleRoleChange}
+      />
     </div>
   );
 };
