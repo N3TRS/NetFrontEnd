@@ -9,7 +9,7 @@ import {
   saveSessionSnapshot,
   updateParticipantRole,
 } from "./api";
-import type { PermissionLevel } from "./lib/permissions";
+import { ROLE_LABELS, type PermissionLevel } from "./lib/permissions";
 import { useSessionPermissions } from "./hooks/useSessionPermissions";
 import { SessionRolesModal } from "./components/SessionRolesModal";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
@@ -42,7 +42,7 @@ type ExecutionRunPayload = {
 };
 
 const RUNNERS: Record<Language, string> = {
-  typescript: "ts-node",
+  typescript: "typescript",
   python: "python",
   java: "java",
 };
@@ -202,6 +202,12 @@ const App = () => {
           p.email === payload.userEmail ? { ...p, role: payload.role } : p,
         ),
       );
+      if (payload.userEmail === user?.email) {
+        pushLogRef.current(
+          `Your permissions changed: ${ROLE_LABELS[payload.role]}`,
+          "ok",
+        );
+      }
     },
   });
 
@@ -224,6 +230,11 @@ const App = () => {
     command,
     externalResult,
   });
+
+  const pushLogRef = useRef(pushLog);
+  useEffect(() => {
+    pushLogRef.current = pushLog;
+  }, [pushLog]);
 
   const handleRoleChange = useCallback(
     async (targetEmail: string, role: Exclude<PermissionLevel, "OWNER">) => {
