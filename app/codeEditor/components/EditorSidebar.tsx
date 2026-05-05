@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Folder, Loader2, Phone, PhoneIncoming, Sparkles, Terminal } from "lucide-react";
+import { Folder, Loader2, PenTool, Phone, PhoneIncoming, Sparkles, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Call } from "./_stores/callStore";
@@ -12,6 +12,8 @@ interface EditorSidebarProps {
   aiPanelOpen: boolean;
   onToggleCall: () => void;
   onToggleAiPanel: () => void;
+  whiteBoardOpen: boolean;
+  onToggleWhiteBoard: () => void;
   joinableCall?: Call | null;
   onJoinCall?: (callId: string) => Promise<void>;
 }
@@ -22,6 +24,8 @@ export function EditorSidebar({
   onToggleCall,
   aiPanelOpen,
   onToggleAiPanel,
+  whiteBoardOpen,
+  onToggleWhiteBoard,
   joinableCall,
   onJoinCall,
 }: EditorSidebarProps) {
@@ -105,6 +109,21 @@ export function EditorSidebar({
         aria-label="Toggle AI assistant"
       >
         <Sparkles className="size-4" aria-hidden />
+      </Button>
+
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={onToggleWhiteBoard}
+        aria-pressed={whiteBoardOpen}
+        className={cn(
+          "cursor-pointer text-muted-foreground hover:bg-white/5 hover:text-white",
+          whiteBoardOpen && "bg-purple-500/10 text-purple-400 hover:bg-purple-500/15 hover:text-purple-300",
+        )}
+        title={whiteBoardOpen ? "Cerrar pizarra" : "Abrir pizarra colaborativa"}
+        aria-label="Toggle pizarra colaborativa"
+      >
+        <PenTool className="size-4" aria-hidden />
       </Button>
 
       <Button

@@ -9,7 +9,7 @@ import {
   saveSessionSnapshot,
   updateParticipantRole,
 } from "./api";
-import type { PermissionLevel } from "./lib/permissions";
+import { ROLE_LABELS, type PermissionLevel } from "./lib/permissions";
 import { useSessionPermissions } from "./hooks/useSessionPermissions";
 import { SessionRolesModal } from "./components/SessionRolesModal";
 import { FILE_EXTENSIONS, LANGUAGE_VERSIONS } from "./Utils/constants";
@@ -29,6 +29,7 @@ import {
   MonacoCanvas,
   type MonacoCanvasHandle,
 } from "./components/MonacoCanvas";
+import { CollaborativeWhiteboardPanel } from "./components/CollaborativeWhiteboardPanel";
 import type { Participant } from "./components/ParticipantAvatars";
 
 type Language = keyof typeof LANGUAGE_VERSIONS;
@@ -42,7 +43,7 @@ type ExecutionRunPayload = {
 };
 
 const RUNNERS: Record<Language, string> = {
-  typescript: "ts-node",
+  typescript: "typescript",
   python: "python",
   java: "java",
 };
@@ -94,6 +95,7 @@ const App = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [whiteBoardOpen, setWhiteBoardOpen] = useState(false);
 
   useEffect(() => {
     if (!token || !sessionId) return;
@@ -202,6 +204,12 @@ const App = () => {
           p.email === payload.userEmail ? { ...p, role: payload.role } : p,
         ),
       );
+      if (payload.userEmail === user?.email) {
+        pushLogRef.current(
+          `Your permissions changed: ${ROLE_LABELS[payload.role]}`,
+          "ok",
+        );
+      }
     },
   });
 
@@ -224,6 +232,11 @@ const App = () => {
     command,
     externalResult,
   });
+
+  const pushLogRef = useRef(pushLog);
+  useEffect(() => {
+    pushLogRef.current = pushLog;
+  }, [pushLog]);
 
   const handleRoleChange = useCallback(
     async (targetEmail: string, role: Exclude<PermissionLevel, "OWNER">) => {
@@ -311,6 +324,8 @@ const App = () => {
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+          whiteBoardOpen={whiteBoardOpen}
+          onToggleWhiteBoard={() => setWhiteBoardOpen((v) => !v)}
           onToggleCall={() => setCallModalMode(isInCall ? 'invite' : 'start')}
           joinableCall={joinableCall}
           onJoinCall={joinCall}
@@ -323,39 +338,49 @@ const App = () => {
           />
         )}
 
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <EditorTabs filename={filename} />
+        {whiteBoardOpen ? (
+          <CollaborativeWhiteboardPanel
+            sessionId={sessionId}
+            token={token}
+            userEmail={user?.email ?? null}
+            userColor={user?.email ? colors[user.email] ?? null : null}
+            onClose={() => setWhiteBoardOpen(false)}
+          />
+        ) : (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <EditorTabs filename={filename} />
 
-          <Group orientation="vertical" className="flex-1">
-            <Panel defaultSize={70} minSize={5}>
-              <MonacoCanvas
-                ref={canvasRef}
-                sessionId={sessionId}
-                token={token}
-                userEmail={user?.email ?? null}
-                userColor={user?.email ? colors[user.email] ?? null : null}
-                canEdit={permissions.canEdit}
-                language={language}
-              />
-            </Panel>
+            <Group orientation="vertical" className="flex-1">
+              <Panel defaultSize={70} minSize={5}>
+                <MonacoCanvas
+                  ref={canvasRef}
+                  sessionId={sessionId}
+                  token={token}
+                  userEmail={user?.email ?? null}
+                  userColor={user?.email ? colors[user.email] ?? null : null}
+                  canEdit={permissions.canEdit}
+                  language={language}
+                />
+              </Panel>
 
-            {terminalOpen ? (
-              <>
-                <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
-                  <span className="absolute inset-x-0 -top-1 h-[9px]" />
-                </Separator>
-                <Panel defaultSize={30} minSize={5}>
-                  <EditorTerminal
-                    command={command}
-                    lines={lines}
-                    onCollapse={() => setTerminalOpen(false)}
-                    onClose={() => setTerminalOpen(false)}
-                  />
-                </Panel>
-              </>
-            ) : null}
-          </Group>
-        </div>
+              {terminalOpen ? (
+                <>
+                  <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
+                    <span className="absolute inset-x-0 -top-1 h-[9px]" />
+                  </Separator>
+                  <Panel defaultSize={30} minSize={5}>
+                    <EditorTerminal
+                      command={command}
+                      lines={lines}
+                      onCollapse={() => setTerminalOpen(false)}
+                      onClose={() => setTerminalOpen(false)}
+                    />
+                  </Panel>
+                </>
+              ) : null}
+            </Group>
+          </div>
+        )}
       </div>
 
       <CallModal
