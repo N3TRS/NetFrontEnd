@@ -74,6 +74,9 @@ export function createYjsClient({
     ws.binaryType = "arraybuffer";
 
     ws.onopen = () => {
+      // Send our current doc state so the server can diff and push any missing updates back.
+      sendFrame(FRAME_SYNC_FULL, Y.encodeStateAsUpdate(ydoc));
+
       const states = awareness.getStates();
       if (states.size > 0) {
         sendFrame(
