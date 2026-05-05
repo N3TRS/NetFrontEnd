@@ -31,9 +31,23 @@ export default function CollaborativeWhiteboard({
   const ydocRef = useRef<Y.Doc | null>(null);
   const clientRef = useRef<YjsClient | null>(null);
   const boardMapRef = useRef<Y.Map<string> | null>(null);
-  const isRemoteRef = useRef(false);
+  // Counter instead of boolean: incremented before updateScene, decremented inside onChange
+  // to correctly handle the async gap between updateScene() and the resulting onChange call.
+  const pendingRemoteRef = useRef(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Keep awareness in sync when user identity changes without tearing down the connection.
+  useEffect(() => {
+    if (!clientRef.current) return;
+    const identity = userEmail ?? "anonymous";
+    clientRef.current.awareness.setLocalStateField("user", {
+      email: identity,
+      name: identity,
+      color: userColor ?? getUserColor(identity),
+    });
+  }, [userEmail, userColor]);
+
+  // Main effect: only re-runs when the session or auth token changes.
   useEffect(() => {
     if (!sessionId || !token) return;
 
@@ -62,9 +76,10 @@ export default function CollaborativeWhiteboard({
       if (!raw || !excalidrawAPIRef.current) return;
       try {
         const { elements } = JSON.parse(raw) as { elements: unknown[] };
-        isRemoteRef.current = true;
+        // Increment before updateScene; the matching decrement happens inside onChange
+        // after Excalidraw's async render cycle completes.
+        pendingRemoteRef.current += 1;
         excalidrawAPIRef.current.updateScene({ elements });
-        isRemoteRef.current = false;
       } catch {
         // ignore malformed scene data
       }
@@ -101,7 +116,8 @@ export default function CollaborativeWhiteboard({
       clientRef.current = null;
       boardMapRef.current = null;
     };
-  }, [sessionId, token, userEmail, userColor]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, token]);
 
   // Apply initial remote scene once Excalidraw mounts
   useEffect(() => {
@@ -110,6 +126,7 @@ export default function CollaborativeWhiteboard({
     if (!raw) return;
     try {
       const { elements } = JSON.parse(raw) as { elements: unknown[] };
+      pendingRemoteRef.current += 1;
       excalidrawAPIRef.current.updateScene({ elements });
     } catch {
       // ignore
@@ -124,7 +141,13 @@ export default function CollaborativeWhiteboard({
           setReady(true);
         }}
         onChange={(elements) => {
-          if (isRemoteRef.current || !boardMapRef.current) return;
+          // If this onChange was triggered by a programmatic updateScene from a remote
+          // update, consume the pending count and skip re-broadcasting to Y.Map.
+          if (pendingRemoteRef.current > 0) {
+            pendingRemoteRef.current -= 1;
+            return;
+          }
+          if (!boardMapRef.current) return;
           if (debounceRef.current) clearTimeout(debounceRef.current);
           debounceRef.current = setTimeout(() => {
             boardMapRef.current?.set("scene", JSON.stringify({ elements }));
