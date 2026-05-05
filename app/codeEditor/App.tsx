@@ -29,6 +29,7 @@ import {
   MonacoCanvas,
   type MonacoCanvasHandle,
 } from "./components/MonacoCanvas";
+import { CollaborativeWhiteboardPanel } from "./components/CollaborativeWhiteboardPanel";
 import type { Participant } from "./components/ParticipantAvatars";
 
 type Language = keyof typeof LANGUAGE_VERSIONS;
@@ -94,6 +95,7 @@ const App = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(true);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [whiteBoardOpen, setWhiteBoardOpen] = useState(false);
 
   useEffect(() => {
     if (!token || !sessionId) return;
@@ -322,6 +324,8 @@ const App = () => {
           onToggleTerminal={() => setTerminalOpen((v) => !v)}
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+          whiteBoardOpen={whiteBoardOpen}
+          onToggleWhiteBoard={() => setWhiteBoardOpen((v) => !v)}
           onToggleCall={() => setCallModalMode(isInCall ? 'invite' : 'start')}
           joinableCall={joinableCall}
           onJoinCall={joinCall}
@@ -334,39 +338,49 @@ const App = () => {
           />
         )}
 
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <EditorTabs filename={filename} />
+        {whiteBoardOpen ? (
+          <CollaborativeWhiteboardPanel
+            sessionId={sessionId}
+            token={token}
+            userEmail={user?.email ?? null}
+            userColor={user?.email ? colors[user.email] ?? null : null}
+            onClose={() => setWhiteBoardOpen(false)}
+          />
+        ) : (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <EditorTabs filename={filename} />
 
-          <Group orientation="vertical" className="flex-1">
-            <Panel defaultSize={70} minSize={5}>
-              <MonacoCanvas
-                ref={canvasRef}
-                sessionId={sessionId}
-                token={token}
-                userEmail={user?.email ?? null}
-                userColor={user?.email ? colors[user.email] ?? null : null}
-                canEdit={permissions.canEdit}
-                language={language}
-              />
-            </Panel>
+            <Group orientation="vertical" className="flex-1">
+              <Panel defaultSize={70} minSize={5}>
+                <MonacoCanvas
+                  ref={canvasRef}
+                  sessionId={sessionId}
+                  token={token}
+                  userEmail={user?.email ?? null}
+                  userColor={user?.email ? colors[user.email] ?? null : null}
+                  canEdit={permissions.canEdit}
+                  language={language}
+                />
+              </Panel>
 
-            {terminalOpen ? (
-              <>
-                <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
-                  <span className="absolute inset-x-0 -top-1 h-[9px]" />
-                </Separator>
-                <Panel defaultSize={30} minSize={5}>
-                  <EditorTerminal
-                    command={command}
-                    lines={lines}
-                    onCollapse={() => setTerminalOpen(false)}
-                    onClose={() => setTerminalOpen(false)}
-                  />
-                </Panel>
-              </>
-            ) : null}
-          </Group>
-        </div>
+              {terminalOpen ? (
+                <>
+                  <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
+                    <span className="absolute inset-x-0 -top-1 h-[9px]" />
+                  </Separator>
+                  <Panel defaultSize={30} minSize={5}>
+                    <EditorTerminal
+                      command={command}
+                      lines={lines}
+                      onCollapse={() => setTerminalOpen(false)}
+                      onClose={() => setTerminalOpen(false)}
+                    />
+                  </Panel>
+                </>
+              ) : null}
+            </Group>
+          </div>
+        )}
       </div>
 
       <CallModal
