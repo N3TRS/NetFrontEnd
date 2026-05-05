@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import * as Y from "yjs";
-import { createYjsClient, type YjsClient } from "../lib/yjsClient";
+import { createYjsBoardClient, type YjsBoardClient } from "../lib/yjsBoardClient";
 import { getUserColor } from "../lib/userColor";
 
 const YJS_WS_BASE =
@@ -29,7 +29,7 @@ export default function CollaborativeWhiteboard({
   const excalidrawAPIRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
   const ydocRef = useRef<Y.Doc | null>(null);
-  const clientRef = useRef<YjsClient | null>(null);
+  const clientRef = useRef<YjsBoardClient | null>(null);
   const boardMapRef = useRef<Y.Map<string> | null>(null);
   // Counter instead of boolean: incremented before updateScene, decremented inside onChange
   // to correctly handle the async gap between updateScene() and the resulting onChange call.
@@ -52,7 +52,7 @@ export default function CollaborativeWhiteboard({
     if (!sessionId || !token) return;
 
     const ydoc = new Y.Doc();
-    const client = createYjsClient({
+    const client = createYjsBoardClient({
       wsUrl: YJS_WS_BASE,
       sessionId: `board-${sessionId}`,
       token,
@@ -71,13 +71,17 @@ export default function CollaborativeWhiteboard({
       color: userColor ?? getUserColor(identity),
     });
 
-    const applyRemote = () => {
+    const applyRemote = (
+      _event: unknown,
+      transaction: Y.Transaction,
+    ) => {
+      // Only apply changes that originated from a remote peer, never echo back
+      // our own writes (which would inflate pendingRemoteRef and block local draws).
+      if (transaction.local) return;
       const raw = boardMap.get("scene");
       if (!raw || !excalidrawAPIRef.current) return;
       try {
         const { elements } = JSON.parse(raw) as { elements: unknown[] };
-        // Increment before updateScene; the matching decrement happens inside onChange
-        // after Excalidraw's async render cycle completes.
         pendingRemoteRef.current += 1;
         excalidrawAPIRef.current.updateScene({ elements });
       } catch {
@@ -141,10 +145,11 @@ export default function CollaborativeWhiteboard({
           setReady(true);
         }}
         onChange={(elements) => {
-          // If this onChange was triggered by a programmatic updateScene from a remote
-          // update, consume the pending count and skip re-broadcasting to Y.Map.
+          // If this onChange was triggered by a remote updateScene, reset the pending
+          // flag and skip re-broadcasting. Using reset (not decrement) so that batched
+          // rapid remote updates (React 18 batching) don't leave the counter stuck > 0.
           if (pendingRemoteRef.current > 0) {
-            pendingRemoteRef.current -= 1;
+            pendingRemoteRef.current = 0;
             return;
           }
           if (!boardMapRef.current) return;
@@ -156,7 +161,6 @@ export default function CollaborativeWhiteboard({
         onPointerUpdate={({ pointer }) => {
           clientRef.current?.awareness.setLocalStateField("cursor", pointer);
         }}
-        theme="dark"
         UIOptions={{
           canvasActions: {
             changeViewBackgroundColor: false,
