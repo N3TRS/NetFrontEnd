@@ -6,6 +6,19 @@ import { io, type Socket } from "socket.io-client";
 
 const WS_URL = process.env.NEXT_PUBLIC_URL_SESSIONS;
 
+// Merge remote elements with local, keeping the copy with the higher version.
+// Local-only elements (in-progress strokes not yet synced) are always preserved.
+function reconcileElements(local: readonly any[], remote: any[]): any[] {
+  const result = new Map<string, any>(remote.map((el: any) => [el.id, el]));
+  for (const localEl of local) {
+    const remoteEl = result.get(localEl.id);
+    if (!remoteEl || localEl.version > remoteEl.version) {
+      result.set(localEl.id, localEl);
+    }
+  }
+  return Array.from(result.values());
+}
+
 interface CollaborativeWhiteboardProps {
   sessionId: string | null;
   token: string | null;
@@ -30,10 +43,9 @@ export default function CollaborativeWhiteboard({
   const socketRef = useRef<Socket | null>(null);
 
   const pendingRemoteRef = useRef(0);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const rafRef = useRef<number | null>(null);
+  const pendingEmitRef = useRef<readonly unknown[] | null>(null);
   const pendingElementsRef = useRef<any[] | null>(null);
-
   const collaboratorsRef = useRef(new Map<string, RemoteCollaborator>());
 
   const pushCollaboratorsToCanvas = () => {
@@ -83,7 +95,6 @@ export default function CollaborativeWhiteboard({
         pushCollaboratorsToCanvas();
       }
 
-      // Apply saved elements – buffer if Excalidraw isn't mounted yet
       const elements = data?.elements;
       if (Array.isArray(elements) && elements.length > 0) {
         if (excalidrawAPIRef.current) {
@@ -98,8 +109,10 @@ export default function CollaborativeWhiteboard({
     socket.on("whiteboard.update", (data: any) => {
       const elements = data?.elements;
       if (!Array.isArray(elements) || !excalidrawAPIRef.current) return;
+      const local = excalidrawAPIRef.current.getSceneElements();
+      const merged = reconcileElements(local, elements);
       pendingRemoteRef.current += 1;
-      excalidrawAPIRef.current.updateScene({ elements });
+      excalidrawAPIRef.current.updateScene({ elements: merged });
     });
 
     socket.on("whiteboard.pointer", (data: any) => {
@@ -137,7 +150,7 @@ export default function CollaborativeWhiteboard({
     });
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       collaboratorsRef.current.clear();
       socket.disconnect();
       socketRef.current = null;
@@ -174,17 +187,24 @@ export default function CollaborativeWhiteboard({
         }}
         onChange={(elements) => {
           if (pendingRemoteRef.current > 0) {
-            pendingRemoteRef.current = 0;
+            pendingRemoteRef.current = Math.max(0, pendingRemoteRef.current - 1);
             return;
           }
           if (!socketRef.current) return;
-          if (debounceRef.current) clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => {
-            socketRef.current?.emit("whiteboard.update", {
-              sessionId,
-              elements,
+          pendingEmitRef.current = elements;
+          if (rafRef.current === null) {
+            rafRef.current = requestAnimationFrame(() => {
+              rafRef.current = null;
+              const toSend = pendingEmitRef.current;
+              pendingEmitRef.current = null;
+              if (toSend) {
+                socketRef.current?.emit("whiteboard.update", {
+                  sessionId,
+                  elements: toSend,
+                });
+              }
             });
-          }, 150);
+          }
         }}
         onPointerUpdate={({ pointer }) => {
           socketRef.current?.emit("whiteboard.pointer", {

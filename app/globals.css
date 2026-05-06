@@ -266,6 +266,10 @@
   @apply rounded-2xl border border-white/10 bg-white/5;
 }
 
+.excalidraw .HintViewer {
+  display: none !important;
+}
+
 
 @keyframes terminal-pulse {
   0%, 100% {
