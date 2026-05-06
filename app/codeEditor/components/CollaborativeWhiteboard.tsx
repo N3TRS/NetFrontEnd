@@ -2,15 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
-import "@excalidraw/excalidraw/index.css";
-import * as Y from "yjs";
-import { createYjsBoardClient, type YjsBoardClient } from "../lib/yjsBoardClient";
-import { getUserColor } from "../lib/userColor";
+import { io, type Socket } from "socket.io-client";
 
-const YJS_WS_BASE =
-  (process.env.NEXT_PUBLIC_URL_SESSIONS
-    ?.replace(/^https/, "wss")
-    .replace(/^http/, "ws") ?? "ws://localhost:3002") + "/ws/yjs";
+const WS_URL = process.env.NEXT_PUBLIC_URL_SESSIONS;
+
+// Merge remote elements with local, keeping the copy with the higher version.
+// Local-only elements (in-progress strokes not yet synced) are always preserved.
+function reconcileElements(local: readonly any[], remote: any[]): any[] {
+  const result = new Map<string, any>(remote.map((el: any) => [el.id, el]));
+  for (const localEl of local) {
+    const remoteEl = result.get(localEl.id);
+    if (!remoteEl || localEl.version > remoteEl.version) {
+      result.set(localEl.id, localEl);
+    }
+  }
+  return Array.from(result.values());
+}
 
 interface CollaborativeWhiteboardProps {
   sessionId: string | null;
@@ -19,121 +26,155 @@ interface CollaborativeWhiteboardProps {
   userColor: string | null;
 }
 
+interface RemoteCollaborator {
+  userEmail: string;
+  userColor: string;
+  cursor: { x: number; y: number } | null;
+}
+
 export default function CollaborativeWhiteboard({
   sessionId,
   token,
   userEmail,
   userColor,
 }: CollaborativeWhiteboardProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const excalidrawAPIRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
-  const ydocRef = useRef<Y.Doc | null>(null);
-  const clientRef = useRef<YjsBoardClient | null>(null);
-  const boardMapRef = useRef<Y.Map<string> | null>(null);
-  // Counter instead of boolean: incremented before updateScene, decremented inside onChange
-  // to correctly handle the async gap between updateScene() and the resulting onChange call.
+  const socketRef = useRef<Socket | null>(null);
+
   const pendingRemoteRef = useRef(0);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const pendingEmitRef = useRef<readonly unknown[] | null>(null);
+  const pendingElementsRef = useRef<any[] | null>(null);
+  const collaboratorsRef = useRef(new Map<string, RemoteCollaborator>());
 
-  // Keep awareness in sync when user identity changes without tearing down the connection.
-  useEffect(() => {
-    if (!clientRef.current) return;
-    const identity = userEmail ?? "anonymous";
-    clientRef.current.awareness.setLocalStateField("user", {
-      email: identity,
-      name: identity,
-      color: userColor ?? getUserColor(identity),
+  const pushCollaboratorsToCanvas = () => {
+    if (!excalidrawAPIRef.current) return;
+    const map = new Map<string, any>();
+    collaboratorsRef.current.forEach((info, email) => {
+      map.set(email, {
+        username: email,
+        color: { background: info.userColor, stroke: info.userColor },
+        cursor: info.cursor ?? null,
+      });
     });
-  }, [userEmail, userColor]);
+    excalidrawAPIRef.current.updateScene({ collaborators: map });
+  };
 
-  // Main effect: only re-runs when the session or auth token changes.
   useEffect(() => {
     if (!sessionId || !token) return;
 
-    const ydoc = new Y.Doc();
-    const client = createYjsBoardClient({
-      wsUrl: YJS_WS_BASE,
-      sessionId: `board-${sessionId}`,
-      token,
-      ydoc,
+    collaboratorsRef.current.clear();
+    pendingElementsRef.current = null;
+
+    const socket = io(`${WS_URL}/ws/whiteboard`, {
+      transports: ["websocket"],
+      auth: { token },
     });
+    socketRef.current = socket;
 
-    const boardMap = ydoc.getMap<string>("board");
-    ydocRef.current = ydoc;
-    clientRef.current = client;
-    boardMapRef.current = boardMap;
-
-    const identity = userEmail ?? "anonymous";
-    client.awareness.setLocalStateField("user", {
-      email: identity,
-      name: identity,
-      color: userColor ?? getUserColor(identity),
-    });
-
-    const applyRemote = (
-      _event: unknown,
-      transaction: Y.Transaction,
-    ) => {
-      // Only apply changes that originated from a remote peer, never echo back
-      // our own writes (which would inflate pendingRemoteRef and block local draws).
-      if (transaction.local) return;
-      const raw = boardMap.get("scene");
-      if (!raw || !excalidrawAPIRef.current) return;
-      try {
-        const { elements } = JSON.parse(raw) as { elements: unknown[] };
-        pendingRemoteRef.current += 1;
-        excalidrawAPIRef.current.updateScene({ elements });
-      } catch {
-        // ignore malformed scene data
-      }
-    };
-    boardMap.observe(applyRemote);
-
-    const syncCollaborators = () => {
-      if (!excalidrawAPIRef.current) return;
-      const { awareness } = client;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const collaborators = new Map<string, any>();
-      awareness.getStates().forEach((state, clientId) => {
-        if (clientId === awareness.clientID || !state.user) return;
-        collaborators.set(String(clientId), {
-          username: state.user.name ?? state.user.email ?? "Anonymous",
-          color: {
-            background: state.user.color ?? "#a855f7",
-            stroke: state.user.color ?? "#a855f7",
-          },
-          cursor: state.cursor ?? null,
-        });
+    socket.on("connect", () => {
+      socket.emit("whiteboard.join", {
+        sessionId,
+        userEmail: userEmail ?? "anonymous",
+        userColor: userColor ?? "#7C3AED",
       });
-      excalidrawAPIRef.current.updateScene({ collaborators });
-    };
-    client.awareness.on("change", syncCollaborators);
+    });
+
+    socket.on("whiteboard.joined", (data: any) => {
+      if (Array.isArray(data?.collaborators)) {
+        data.collaborators.forEach((c: any) => {
+          if (c?.userEmail) {
+            collaboratorsRef.current.set(c.userEmail, {
+              userEmail: c.userEmail,
+              userColor: c.userColor ?? "#7C3AED",
+              cursor: c.cursor ?? null,
+            });
+          }
+        });
+        pushCollaboratorsToCanvas();
+      }
+
+      const elements = data?.elements;
+      if (Array.isArray(elements) && elements.length > 0) {
+        if (excalidrawAPIRef.current) {
+          pendingRemoteRef.current += 1;
+          excalidrawAPIRef.current.updateScene({ elements });
+        } else {
+          pendingElementsRef.current = elements;
+        }
+      }
+    });
+
+    socket.on("whiteboard.update", (data: any) => {
+      const elements = data?.elements;
+      if (!Array.isArray(elements) || !excalidrawAPIRef.current) return;
+      const local = excalidrawAPIRef.current.getSceneElements();
+      const merged = reconcileElements(local, elements);
+      pendingRemoteRef.current += 1;
+      excalidrawAPIRef.current.updateScene({ elements: merged });
+    });
+
+    socket.on("whiteboard.pointer", (data: any) => {
+      const { userEmail: email, userColor: color, x, y } = data ?? {};
+      if (!email) return;
+      const existing = collaboratorsRef.current.get(email) ?? {
+        userEmail: email,
+        userColor: color ?? "#7C3AED",
+        cursor: null,
+      };
+      collaboratorsRef.current.set(email, {
+        ...existing,
+        cursor: { x, y },
+      });
+      pushCollaboratorsToCanvas();
+    });
+
+    socket.on("whiteboard.collaboratorJoined", (data: any) => {
+      const { userEmail: email, userColor: color } = data ?? {};
+      if (!email) return;
+      if (!collaboratorsRef.current.has(email)) {
+        collaboratorsRef.current.set(email, {
+          userEmail: email,
+          userColor: color ?? "#7C3AED",
+          cursor: null,
+        });
+        pushCollaboratorsToCanvas();
+      }
+    });
+
+    socket.on("whiteboard.collaboratorLeft", (data: any) => {
+      if (data?.userEmail && collaboratorsRef.current.delete(data.userEmail)) {
+        pushCollaboratorsToCanvas();
+      }
+    });
 
     return () => {
-      boardMap.unobserve(applyRemote);
-      client.awareness.off("change", syncCollaborators);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      client.close();
-      ydoc.destroy();
-      ydocRef.current = null;
-      clientRef.current = null;
-      boardMapRef.current = null;
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      collaboratorsRef.current.clear();
+      socket.disconnect();
+      socketRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, token]);
 
-  // Apply initial remote scene once Excalidraw mounts
   useEffect(() => {
-    if (!ready || !boardMapRef.current || !excalidrawAPIRef.current) return;
-    const raw = boardMapRef.current.get("scene");
-    if (!raw) return;
-    try {
-      const { elements } = JSON.parse(raw) as { elements: unknown[] };
+    const socket = socketRef.current;
+    if (!socket?.connected || !sessionId) return;
+    socket.emit("whiteboard.join", {
+      sessionId,
+      userEmail: userEmail ?? "anonymous",
+      userColor: userColor ?? "#7C3AED",
+    });
+  }, [userEmail, userColor]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (pendingElementsRef.current?.length && excalidrawAPIRef.current) {
       pendingRemoteRef.current += 1;
-      excalidrawAPIRef.current.updateScene({ elements });
-    } catch {
-      // ignore
+      excalidrawAPIRef.current.updateScene({
+        elements: pendingElementsRef.current,
+      });
+      pendingElementsRef.current = null;
     }
   }, [ready]);
 
@@ -145,21 +186,32 @@ export default function CollaborativeWhiteboard({
           setReady(true);
         }}
         onChange={(elements) => {
-          // If this onChange was triggered by a remote updateScene, reset the pending
-          // flag and skip re-broadcasting. Using reset (not decrement) so that batched
-          // rapid remote updates (React 18 batching) don't leave the counter stuck > 0.
           if (pendingRemoteRef.current > 0) {
-            pendingRemoteRef.current = 0;
+            pendingRemoteRef.current = Math.max(0, pendingRemoteRef.current - 1);
             return;
           }
-          if (!boardMapRef.current) return;
-          if (debounceRef.current) clearTimeout(debounceRef.current);
-          debounceRef.current = setTimeout(() => {
-            boardMapRef.current?.set("scene", JSON.stringify({ elements }));
-          }, 150);
+          if (!socketRef.current) return;
+          pendingEmitRef.current = elements;
+          if (rafRef.current === null) {
+            rafRef.current = requestAnimationFrame(() => {
+              rafRef.current = null;
+              const toSend = pendingEmitRef.current;
+              pendingEmitRef.current = null;
+              if (toSend) {
+                socketRef.current?.emit("whiteboard.update", {
+                  sessionId,
+                  elements: toSend,
+                });
+              }
+            });
+          }
         }}
         onPointerUpdate={({ pointer }) => {
-          clientRef.current?.awareness.setLocalStateField("cursor", pointer);
+          socketRef.current?.emit("whiteboard.pointer", {
+            sessionId,
+            x: pointer.x,
+            y: pointer.y,
+          });
         }}
         UIOptions={{
           canvasActions: {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "@excalidraw/excalidraw/index.css";
 import { ProjectProvider } from "./_contexts/ProjectContext";
 import { ThemeProvider } from "@/components/theme-provider";
 
