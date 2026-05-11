@@ -36,6 +36,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const sendTransportRef = useRef<any>(null);
   const recvTransportRef = useRef<any>(null);
   const consumersRef = useRef<Map<string, any>>(new Map());
+  const consumerUserIdsRef = useRef<Map<string, string>>(new Map()); // consumerId → userId
   const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
   const currentCallIdRef = useRef<string | null>(null);
 
@@ -64,6 +65,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const cleanupMediasoup = useCallback(() => {
     consumersRef.current.forEach((c) => { try { if (!c.closed) c.close(); } catch { } });
     consumersRef.current.clear();
+    consumerUserIdsRef.current.clear();
     try { if (sendTransportRef.current && !sendTransportRef.current.closed) sendTransportRef.current.close(); } catch { }
     try { if (recvTransportRef.current && !recvTransportRef.current.closed) recvTransportRef.current.close(); } catch { }
     sendTransportRef.current = null;
@@ -98,6 +100,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
       const consumer = await recvTransport.consume(params);
       consumersRef.current.set(consumer.id, consumer);
+      consumerUserIdsRef.current.set(consumer.id, producerUserId);
 
       // Accumulate tracks from the same user into one MediaStream
       let stream = remoteStreamsRef.current.get(producerUserId);
@@ -111,7 +114,10 @@ export const useWebRTC = (userId: string, token: string | null) => {
       // Consumer starts paused — must resume to receive media
       socketRef.current?.emit('ms:resume-consumer', { callId, consumerId: consumer.id }, () => {});
 
-      consumer.on('transportclose', () => consumersRef.current.delete(consumer.id));
+      consumer.on('transportclose', () => {
+        consumersRef.current.delete(consumer.id);
+        consumerUserIdsRef.current.delete(consumer.id);
+      });
     } catch (err) {
       console.error(`[mediasoup] consume failed for producer ${producerId}:`, err);
     }
@@ -205,6 +211,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
           audio: audio ? audioConstraints : false,
           video: { width: { ideal: 1280 }, height: { ideal: 720 } },
         });
+        setIsVideoOff(false);
         setLocalStream(stream);
         return stream;
       } catch { /* no camera, fall through */ }
@@ -295,12 +302,22 @@ export const useWebRTC = (userId: string, token: string | null) => {
       await consumeProducerRef.current(callId, producerId, producerUserId);
     });
 
-    // Remote producer closed — remove its track
+    // Remove consumer and stream if user has no more producers
     socket.on('ms:producer-closed', ({ producerId }: { producerId: string }) => {
       for (const [cid, consumer] of consumersRef.current.entries()) {
         if (consumer.producerId === producerId) {
+          const leavingUserId = consumerUserIdsRef.current.get(cid);
           try { if (!consumer.closed) consumer.close(); } catch { }
           consumersRef.current.delete(cid);
+          consumerUserIdsRef.current.delete(cid);
+
+          if (leavingUserId) {
+            const hasMore = [...consumerUserIdsRef.current.values()].some(uid => uid === leavingUserId);
+            if (!hasMore) {
+              remoteStreamsRef.current.delete(leavingUserId);
+              removeRemoteStream(leavingUserId);
+            }
+          }
           break;
         }
       }
@@ -316,6 +333,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   const startCall = useCallback(async (participantIds: string[]) => {
     if (!socketRef.current) return;
     if (useCallStore.getState().isInCall) return;
+    cleanupMediasoup();
 
     try {
       const response = await fetch(`${CALLS_URL}/calls/create`, {
@@ -358,6 +376,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   // Accept an incoming call
   const acceptCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
+    cleanupMediasoup();
     try {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/accept`, {
         method: 'POST',
@@ -393,7 +412,11 @@ export const useWebRTC = (userId: string, token: string | null) => {
     } catch (error) {
       console.error('Error accepting call:', error);
       cleanupMediasoup();
-      resetCall();
+      // Stop local stream if acquired
+      const ls = useCallStore.getState().localStream;
+      if (ls) { ls.getTracks().forEach(t => t.stop()); useCallStore.getState().setLocalStream(null); }
+      useCallStore.getState().setIsInCall(false);
+      useCallStore.getState().setIsIncomingCall(true);
     }
   }, [userId, token, emitAck, cleanupMediasoup]);
 
@@ -447,6 +470,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
   // Join an already-active call (late joiner / rejoin)
   const joinCall = useCallback(async (callId: string) => {
     if (!socketRef.current) return;
+    cleanupMediasoup();
     try {
       const localStream = await getUserMedia(true, true);
 
@@ -479,7 +503,9 @@ export const useWebRTC = (userId: string, token: string | null) => {
     } catch (error) {
       console.error('Error joining call:', error);
       cleanupMediasoup();
-      resetCall();
+      // Stop local stream if acquired, but preserve joinableCall so the button stays active
+      const ls = useCallStore.getState().localStream;
+      if (ls) { ls.getTracks().forEach(t => t.stop()); useCallStore.getState().setLocalStream(null); }
     }
   }, [userId, token, emitAck, cleanupMediasoup]);
 
