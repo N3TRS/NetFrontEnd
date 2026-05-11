@@ -47,6 +47,7 @@ export default function CollaborativeWhiteboard({
   const pendingEmitRef = useRef<readonly unknown[] | null>(null);
   const pendingElementsRef = useRef<any[] | null>(null);
   const collaboratorsRef = useRef(new Map<string, RemoteCollaborator>());
+  const hasSyncedRef = useRef(false);
 
   const pushCollaboratorsToCanvas = () => {
     if (!excalidrawAPIRef.current) return;
@@ -66,6 +67,7 @@ export default function CollaborativeWhiteboard({
 
     collaboratorsRef.current.clear();
     pendingElementsRef.current = null;
+    hasSyncedRef.current = false;
 
     const socket = io(`${WS_URL}/ws/whiteboard`, {
       transports: ["websocket"],
@@ -104,6 +106,7 @@ export default function CollaborativeWhiteboard({
           pendingElementsRef.current = elements;
         }
       }
+      hasSyncedRef.current = true;
     });
 
     socket.on("whiteboard.update", (data: any) => {
@@ -153,15 +156,13 @@ export default function CollaborativeWhiteboard({
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
+        const pending = pendingEmitRef.current;
         pendingEmitRef.current = null;
+        if (pending && socket.connected && sessionId && hasSyncedRef.current) {
+          socket.emit("whiteboard.update", { sessionId, elements: pending });
+        }
       }
-      const finalElements = excalidrawAPIRef.current?.getSceneElements();
-      if (finalElements && finalElements.length > 0 && socket.connected && sessionId) {
-        socket.emit("whiteboard.update", {
-          sessionId,
-          elements: finalElements,
-        });
-      }
+      hasSyncedRef.current = false;
       collaboratorsRef.current.clear();
       socket.disconnect();
       socketRef.current = null;
@@ -202,6 +203,7 @@ export default function CollaborativeWhiteboard({
             return;
           }
           if (!socketRef.current) return;
+          if (!hasSyncedRef.current) return;
           pendingEmitRef.current = elements;
           if (rafRef.current === null) {
             rafRef.current = requestAnimationFrame(() => {
