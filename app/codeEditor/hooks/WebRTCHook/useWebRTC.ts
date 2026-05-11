@@ -259,12 +259,8 @@ export const useWebRTC = (userId: string, token: string | null) => {
     });
 
     socket.on('call-ended', () => {
-      const { isInCall: wasInCall, currentCall: callSnapshot } = useCallStore.getState();
       cleanupMediasoup();
       resetCall();
-      if (wasInCall && callSnapshot) {
-        useCallStore.getState().setJoinableCall(callSnapshot);
-      }
     });
 
     socket.on('call-missed', () => {
