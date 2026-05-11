@@ -86,7 +86,18 @@ export default function ExcalidrawBoard() {
     });
 
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        pendingEmitRef.current = null;
+      }
+      const finalElements = excalidrawApiRef.current?.getSceneElements();
+      if (finalElements && finalElements.length > 0 && socket.connected) {
+        socket.emit("whiteboard.update", {
+          sessionId: sessionIdRef.current,
+          elements: finalElements,
+        });
+      }
       socket.disconnect();
       socketRef.current = null;
     };

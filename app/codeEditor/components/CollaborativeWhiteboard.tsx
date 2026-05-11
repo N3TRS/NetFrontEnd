@@ -150,7 +150,18 @@ export default function CollaborativeWhiteboard({
     });
 
     return () => {
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+        pendingEmitRef.current = null;
+      }
+      const finalElements = excalidrawAPIRef.current?.getSceneElements();
+      if (finalElements && finalElements.length > 0 && socket.connected && sessionId) {
+        socket.emit("whiteboard.update", {
+          sessionId,
+          elements: finalElements,
+        });
+      }
       collaboratorsRef.current.clear();
       socket.disconnect();
       socketRef.current = null;
