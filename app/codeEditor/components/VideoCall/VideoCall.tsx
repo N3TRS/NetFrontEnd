@@ -101,7 +101,7 @@ function ParticipantTile({
       <video
         ref={videoRef}
         autoPlay
-        muted={!!isLocal}
+        muted
         playsInline
         className={cn("h-full w-full object-cover", isVideoOff && "hidden")}
       />
@@ -139,22 +139,39 @@ function ParticipantTile({
 }
 
 // Small component so the minimized remote tile also gets a stable ref + effect.
+// Video only — audio comes from RemoteAudio below.
 function MiniRemoteVideo({ stream }: { stream: MediaStream }) {
   const ref = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el || !stream) return;
-
     el.srcObject = stream;
     el.play().catch(() => {});
-
     const onAddTrack = () => el.play().catch(() => {});
     stream.addEventListener('addtrack', onAddTrack);
     return () => stream.removeEventListener('addtrack', onAddTrack);
   }, [stream]);
 
-  return <video ref={ref} autoPlay playsInline className="h-full w-full object-cover" />;
+  return <video ref={ref} autoPlay playsInline muted className="h-full w-full object-cover" />;
+}
+
+// Persistent audio element — stays mounted regardless of minimized/maximized toggle.
+// This ensures audio from all participants plays even when their video tile is hidden.
+function RemoteAudio({ stream }: { stream: MediaStream }) {
+  const ref = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !stream) return;
+    el.srcObject = stream;
+    el.play().catch(() => {});
+    const onAddTrack = () => el.play().catch(() => {});
+    stream.addEventListener('addtrack', onAddTrack);
+    return () => stream.removeEventListener('addtrack', onAddTrack);
+  }, [stream]);
+
+  return <audio ref={ref} autoPlay />;
 }
 
 export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCallProps) {
@@ -164,6 +181,7 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
     remoteStreams: remoteStreamsList,
     isMuted,
     isVideoOff,
+    remoteMuteStates,
     toggleMute,
     toggleVideo,
   } = useCallStore();
@@ -226,20 +244,27 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
 
   if (!isInCall) return null;
 
+  const firstRemote = remoteParticipants[0];
+
   // ── Minimized ──────────────────────────────────────────────────────────────
   if (isMinimized) {
-    const firstRemote = remoteParticipants[0];
-
     return (
-      <div
-        ref={containerRef}
-        style={{ position: "fixed", left: `${position.x}px`, top: `${position.y}px`, zIndex: 1000 }}
-        className={cn(
-          "w-72 overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl",
-          isDragging && "cursor-move select-none"
-        )}
-        onMouseDown={handleMouseDown}
-      >
+      <>
+        {/* Persistent audio for ALL remote participants — unaffected by minimize/maximize */}
+        <div style={{ display: 'none' }} aria-hidden="true">
+          {remoteParticipants.map(({ userId, stream }) => (
+            <RemoteAudio key={`audio-${userId}`} stream={stream} />
+          ))}
+        </div>
+        <div
+          ref={containerRef}
+          style={{ position: "fixed", left: `${position.x}px`, top: `${position.y}px`, zIndex: 1000 }}
+          className={cn(
+            "w-72 overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-2xl",
+            isDragging && "cursor-move select-none"
+          )}
+          onMouseDown={handleMouseDown}
+        >
         <div className="drag-handle flex cursor-move items-center justify-between border-b border-white/10 bg-[#1a1a1a] px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-green-500" />
@@ -339,7 +364,8 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
             <PhoneOff className="h-4 w-4 text-white" />
           </button>
         </div>
-      </div>
+        </div>
+      </>
     );
   }
 
@@ -354,6 +380,12 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
   );
 
   return (
+    <>
+    <div style={{ display: 'none' }} aria-hidden="true">
+      {remoteParticipants.map(({ userId, stream }) => (
+        <RemoteAudio key={`audio-${userId}`} stream={stream} />
+      ))}
+    </div>
     <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0a]">
       <div className="flex items-center justify-between border-b border-white/10 bg-[#111] px-4 py-3">
         <div className="flex items-center gap-3">
@@ -394,6 +426,7 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
               label={displayName(userId)}
               userId={userId}
               stream={stream}
+              isMuted={remoteMuteStates[userId] ?? false}
             />
           ))}
 
@@ -452,5 +485,6 @@ export function VideoCall({ onEndCall, onAddToCall, currentUserLabel }: VideoCal
         </button>
       </div>
     </div>
+    </>
   );
 }

@@ -41,6 +41,7 @@ interface CallState {
   // Media controls
   isMuted: boolean;
   isVideoOff: boolean;
+  remoteMuteStates: Record<string, boolean>;
 
   // Actions
   setCurrentCall: (call: Call | null) => void;
@@ -50,6 +51,7 @@ interface CallState {
   setLocalStream: (stream: MediaStream | null) => void;
   addRemoteStream: (userId: string, stream: MediaStream) => void;
   removeRemoteStream: (userId: string) => void;
+  setRemoteMuteState: (userId: string, isMuted: boolean) => void;
   toggleMute: () => void;
   toggleVideo: () => void;
   setIsMuted: (value: boolean) => void;
@@ -67,6 +69,7 @@ export const useCallStore = create<CallState>((set, get) => ({
   remoteStreams: [],
   isMuted: false,
   isVideoOff: false,
+  remoteMuteStates: {} as Record<string, boolean>,
 
   // Actions
   setCurrentCall: (call) => set({ currentCall: call }),
@@ -101,6 +104,11 @@ export const useCallStore = create<CallState>((set, get) => ({
   removeRemoteStream: (userId) =>
     set((state) => ({
       remoteStreams: state.remoteStreams.filter(s => s.userId !== userId),
+    })),
+
+  setRemoteMuteState: (userId, isMuted) =>
+    set((state) => ({
+      remoteMuteStates: { ...state.remoteMuteStates, [userId]: isMuted },
     })),
   
   toggleMute: () => {
@@ -153,6 +161,7 @@ export const useCallStore = create<CallState>((set, get) => ({
       remoteStreams: [],
       isMuted: false,
       isVideoOff: false,
+      remoteMuteStates: {},
     });
   },
 }));

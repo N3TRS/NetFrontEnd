@@ -323,11 +323,32 @@ export const useWebRTC = (userId: string, token: string | null) => {
       }
     });
 
+    socket.on('user:mute-changed', ({ userId: remoteUserId, isMuted }: { userId: string; isMuted: boolean }) => {
+      useCallStore.getState().setRemoteMuteState(remoteUserId, isMuted);
+    });
+
     socketRef.current = socket;
     return () => {
       socket.disconnect();
     };
   }, [userId, token]);
+
+  // Emit mute state to the call room whenever local isMuted changes
+  useEffect(() => {
+    let prev = useCallStore.getState().isMuted;
+    return useCallStore.subscribe((state) => {
+      if (state.isMuted === prev) return;
+      prev = state.isMuted;
+      const { currentCall } = state;
+      if (socketRef.current && currentCall?.id) {
+        socketRef.current.emit('user:mute-changed', {
+          callId: currentCall.id,
+          userId,
+          isMuted: state.isMuted,
+        });
+      }
+    });
+  }, [userId]);
 
   // Start a new outgoing call
   const startCall = useCallback(async (participantIds: string[]) => {
