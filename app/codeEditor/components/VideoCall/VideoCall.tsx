@@ -120,20 +120,12 @@ function ParticipantTile({
       )}
 
       <div className="absolute bottom-2 left-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2 py-1 text-xs text-white backdrop-blur-sm">
-        {isLocal && isMuted && (
-          <MicOff className="h-3 w-3 text-red-400" />
-        )}
+        {isMuted && <MicOff className="h-3 w-3 text-red-400" />}
         {isSpeaking && !isLocal && (
           <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
         )}
         {label}
       </div>
-
-      {!isLocal && isMuted && (
-        <div className="absolute right-2 top-2 rounded-md bg-red-500/20 px-1.5 py-0.5 text-[10px] text-red-300 ring-1 ring-red-500/40">
-          Mic off
-        </div>
-      )}
     </div>
   );
 }
