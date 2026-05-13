@@ -11,6 +11,7 @@ export enum CallStatus {
 export interface Call {
   callId?: string;
   id: string;
+  sessionId: string;
   callerId: string;
   participants: string[];
   activeParticipants: string[];
