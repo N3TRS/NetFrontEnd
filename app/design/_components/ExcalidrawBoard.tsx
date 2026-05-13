@@ -3,7 +3,7 @@ import { Excalidraw } from "@excalidraw/excalidraw";
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 
-const WS_URL = process.env.NEXT_PUBLIC_URL_SESSIONS ?? "http://localhost:3002";
+const WS_URL = process.env.NEXT_PUBLIC_URL_BOARD ?? "http://localhost:3003";
 
 function getStoredUser(): { token: string | null; email: string; color: string } {
   try {

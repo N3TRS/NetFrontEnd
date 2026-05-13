@@ -24,6 +24,7 @@ interface CollaborativeWhiteboardPanelProps {
   userEmail: string | null;
   userColor: string | null;
   onClose: () => void;
+  onBoardReady?: (getElements: () => readonly unknown[]) => void;
 }
 
 export function CollaborativeWhiteboardPanel({
@@ -32,6 +33,7 @@ export function CollaborativeWhiteboardPanel({
   userEmail,
   userColor,
   onClose,
+  onBoardReady,
 }: CollaborativeWhiteboardPanelProps) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -64,6 +66,7 @@ export function CollaborativeWhiteboardPanel({
           token={token}
           userEmail={userEmail}
           userColor={userColor}
+          onBoardReady={onBoardReady}
         />
       </div>
     </div>

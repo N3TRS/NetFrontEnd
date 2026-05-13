@@ -6,6 +6,7 @@ import { Group, Panel, Separator } from "react-resizable-panels";
 import { useAuth } from "@/app/auth/_hooks/useAuth";
 import {
   getSession,
+  saveBoardSnapshot,
   saveSessionSnapshot,
   updateParticipantRole,
 } from "./api";
@@ -130,6 +131,7 @@ const App = () => {
   }, [token, sessionId]);
 
   const canvasRef = useRef<MonacoCanvasHandle>(null);
+  const boardGetterRef = useRef<(() => readonly unknown[]) | null>(null);
   const { isInCall, isIncomingCall, joinableCall, currentCall } = useCallStore();
   const userEmail = user?.email;
   const { startCall, acceptCall, rejectCall, leaveCall, joinCall, inviteToCall } =
@@ -278,8 +280,28 @@ const App = () => {
     try {
       setIsSaving(true);
       const code = canvasRef.current?.getCode() ?? "";
-      await saveSessionSnapshot(token, sessionId, language, code);
+      const { snapshot } = await saveSessionSnapshot(
+        token,
+        sessionId,
+        language,
+        code,
+      );
       pushLog("Session saved", "ok");
+
+      const elements = boardGetterRef.current?.();
+      if (elements && elements.length > 0 && user?.email) {
+        try {
+          await saveBoardSnapshot(
+            token,
+            sessionId,
+            snapshot.id,
+            user.email,
+            elements,
+          );
+        } catch {
+          pushLog("Code saved. Whiteboard snapshot failed.", "fail");
+        }
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not save session";
@@ -287,7 +309,7 @@ const App = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [language, permissions.canSave, pushLog, sessionId, token]);
+  }, [language, permissions.canSave, pushLog, sessionId, token, user?.email]);
 
   const handleInvite = useCallback(() => {
     if (!inviteCode) {
@@ -344,7 +366,13 @@ const App = () => {
             token={token}
             userEmail={user?.email ?? null}
             userColor={user?.email ? colors[user.email] ?? null : null}
-            onClose={() => setWhiteBoardOpen(false)}
+            onClose={() => {
+              boardGetterRef.current = null;
+              setWhiteBoardOpen(false);
+            }}
+            onBoardReady={(getElements) => {
+              boardGetterRef.current = getElements;
+            }}
           />
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden">
