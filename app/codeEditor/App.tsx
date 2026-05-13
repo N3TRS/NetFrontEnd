@@ -133,7 +133,7 @@ const App = () => {
   const { isInCall, isIncomingCall, joinableCall, currentCall } = useCallStore();
   const userEmail = user?.email;
   const { startCall, acceptCall, rejectCall, leaveCall, joinCall, inviteToCall } =
-    useWebRTC(userEmail || '', token);
+    useWebRTC(userEmail || '', token, sessionId);
   const [callModalMode, setCallModalMode] = useState<'start' | 'invite' | null>(null);
 
   useSessionSocket({
