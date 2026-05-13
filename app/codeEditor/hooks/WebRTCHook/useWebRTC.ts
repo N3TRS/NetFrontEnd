@@ -28,7 +28,11 @@ const getCallFromPayload = (payload: unknown): Call | null => {
   return normalizeCall(raw);
 };
 
-export const useWebRTC = (userId: string, token: string | null) => {
+export const useWebRTC = (
+  userId: string,
+  token: string | null,
+  sessionId: string | null,
+) => {
   const socketRef = useRef<Socket | null>(null);
 
   // mediasoup refs
@@ -234,7 +238,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   // Initialize socket and register all event handlers
   useEffect(() => {
-    if (!userId || !token) return;
+    if (!userId || !token || !sessionId) return;
 
     const socket = io(CALLS_URL, {
       path: '/calls/socket.io',
@@ -243,7 +247,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
     });
 
     socket.on('connect', () => {
-      socket.emit('register', { userId });
+      socket.emit('register', { userId, sessionId });
     });
 
     socket.on('disconnect', () => { });
@@ -331,7 +335,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
     return () => {
       socket.disconnect();
     };
-  }, [userId, token]);
+  }, [userId, token, sessionId]);
 
   // Emit mute state to the call room whenever local isMuted changes
   useEffect(() => {
@@ -352,7 +356,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
   // Start a new outgoing call
   const startCall = useCallback(async (participantIds: string[]) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !sessionId) return;
     if (useCallStore.getState().isInCall) return;
     cleanupMediasoup();
 
@@ -360,7 +364,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const response = await fetch(`${CALLS_URL}/calls/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ callerId: userId, participants: participantIds }),
+        body: JSON.stringify({ callerId: userId, sessionId, participants: participantIds }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -392,17 +396,17 @@ export const useWebRTC = (userId: string, token: string | null) => {
       cleanupMediasoup();
       resetCall();
     }
-  }, [userId, token, emitAck, cleanupMediasoup]);
+  }, [userId, token, sessionId, emitAck, cleanupMediasoup]);
 
   // Accept an incoming call
   const acceptCall = useCallback(async (callId: string) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !sessionId) return;
     cleanupMediasoup();
     try {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, sessionId }),
       });
       if (!response.ok) throw new Error('Failed to accept call');
 
@@ -439,22 +443,22 @@ export const useWebRTC = (userId: string, token: string | null) => {
       useCallStore.getState().setIsInCall(false);
       useCallStore.getState().setIsIncomingCall(true);
     }
-  }, [userId, token, emitAck, cleanupMediasoup]);
+  }, [userId, token, sessionId, emitAck, cleanupMediasoup]);
 
   // Reject an incoming call
   const rejectCall = useCallback(async (callId: string) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !sessionId) return;
     try {
       await fetch(`${CALLS_URL}/calls/${callId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, sessionId }),
       });
       resetCall();
     } catch (error) {
       console.error('Error rejecting call:', error);
     }
-  }, [userId, token]);
+  }, [userId, token, sessionId]);
 
   // Leave the current call
   const leaveCall = useCallback(async () => {
@@ -468,12 +472,12 @@ export const useWebRTC = (userId: string, token: string | null) => {
 
     resetCall();
 
-    if (callId) {
+    if (callId && sessionId) {
       try {
         const response = await fetch(`${CALLS_URL}/calls/${callId}/leave`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ userId }),
+          body: JSON.stringify({ userId, sessionId }),
         });
         if (response.ok) {
           const rawData: Record<string, unknown> = await response.json();
@@ -486,11 +490,11 @@ export const useWebRTC = (userId: string, token: string | null) => {
         console.error('Error leaving call:', error);
       }
     }
-  }, [userId, token, cleanupMediasoup]);
+  }, [userId, token, sessionId, cleanupMediasoup]);
 
   // Join an already-active call (late joiner / rejoin)
   const joinCall = useCallback(async (callId: string) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !sessionId) return;
     cleanupMediasoup();
     try {
       const localStream = await getUserMedia(true, true);
@@ -498,7 +502,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, sessionId }),
       });
       if (!response.ok) throw new Error('Failed to join call');
 
@@ -528,19 +532,19 @@ export const useWebRTC = (userId: string, token: string | null) => {
       const ls = useCallStore.getState().localStream;
       if (ls) { ls.getTracks().forEach(t => t.stop()); useCallStore.getState().setLocalStream(null); }
     }
-  }, [userId, token, emitAck, cleanupMediasoup]);
+  }, [userId, token, sessionId, emitAck, cleanupMediasoup]);
 
   // Invite additional participants to the active call
   const inviteToCall = useCallback(async (inviteeIds: string[]) => {
     const callId = useCallStore.getState().currentCall?.id;
-    if (!callId || !socketRef.current) return;
+    if (!callId || !socketRef.current || !sessionId) return;
     if (inviteeIds.length === 0) return;
 
     try {
       const response = await fetch(`${CALLS_URL}/calls/${callId}/invite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ inviterId: userId, inviteeIds }),
+        body: JSON.stringify({ inviterId: userId, sessionId, inviteeIds }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -552,7 +556,7 @@ export const useWebRTC = (userId: string, token: string | null) => {
     } catch (error) {
       console.error('Error inviting to call:', error);
     }
-  }, [userId, token]);
+  }, [userId, token, sessionId]);
 
   return {
     acceptCall,
