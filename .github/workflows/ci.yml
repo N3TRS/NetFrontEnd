@@ -49,6 +49,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Generate Next.js type stubs
+        run: mkdir -p .next/types && touch .next/types/routes.d.ts
+
       - name: Type check
         run: pnpm type-check
 
