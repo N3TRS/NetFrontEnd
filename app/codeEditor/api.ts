@@ -234,3 +234,35 @@ export async function analyzeCode(
   }
   return res.json() as Promise<AnalyzeResponse>;
 }
+
+export interface DrawResponse {
+  status: 'success';
+  response: string;
+}
+
+export async function drawBoard(
+  prompt: string,
+  sessionId: string,
+): Promise<DrawResponse> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_URL_APIGATEWAY}/draw`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, sessionId }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Draw failed (${res.status})${text ? `: ${text}` : ''}`);
+  }
+  return res.json() as Promise<DrawResponse>;
+}
+
+const DRAW_KEYWORDS = [
+  'dibuja', 'dibujar', 'draw', 'diagrama', 'diagram', 'flowchart',
+  'flujo', 'wireframe', 'esquema', 'crea un', 'chart', 'mapa',
+  'arquitectura', 'pizarra', 'whiteboard',
+];
+
+export function isDrawRequest(prompt: string): boolean {
+  const lower = prompt.toLowerCase();
+  return DRAW_KEYWORDS.some((kw) => lower.includes(kw));
+}
