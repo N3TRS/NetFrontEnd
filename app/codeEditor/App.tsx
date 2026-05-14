@@ -360,7 +360,47 @@ const App = () => {
           />
         )}
 
-        {whiteBoardOpen ? (
+        <div
+          className={
+            whiteBoardOpen
+              ? "hidden"
+              : "flex flex-1 flex-col overflow-hidden"
+          }
+        >
+          <EditorTabs filename={filename} />
+
+          <Group orientation="vertical" className="flex-1">
+            <Panel defaultSize={70} minSize={5}>
+              <MonacoCanvas
+                ref={canvasRef}
+                sessionId={sessionId}
+                token={token}
+                userEmail={user?.email ?? null}
+                userColor={user?.email ? colors[user.email] ?? null : null}
+                canEdit={permissions.canEdit}
+                language={language}
+              />
+            </Panel>
+
+            {terminalOpen ? (
+              <>
+                <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
+                  <span className="absolute inset-x-0 -top-1 h-[9px]" />
+                </Separator>
+                <Panel defaultSize={30} minSize={5}>
+                  <EditorTerminal
+                    command={command}
+                    lines={lines}
+                    onCollapse={() => setTerminalOpen(false)}
+                    onClose={() => setTerminalOpen(false)}
+                  />
+                </Panel>
+              </>
+            ) : null}
+          </Group>
+        </div>
+
+        {whiteBoardOpen && (
           <CollaborativeWhiteboardPanel
             sessionId={sessionId}
             token={token}
@@ -374,40 +414,6 @@ const App = () => {
               boardGetterRef.current = getElements;
             }}
           />
-        ) : (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <EditorTabs filename={filename} />
-
-            <Group orientation="vertical" className="flex-1">
-              <Panel defaultSize={70} minSize={5}>
-                <MonacoCanvas
-                  ref={canvasRef}
-                  sessionId={sessionId}
-                  token={token}
-                  userEmail={user?.email ?? null}
-                  userColor={user?.email ? colors[user.email] ?? null : null}
-                  canEdit={permissions.canEdit}
-                  language={language}
-                />
-              </Panel>
-
-              {terminalOpen ? (
-                <>
-                  <Separator className="relative h-px bg-white/5 transition-colors hover:bg-primary/50 active:bg-primary">
-                    <span className="absolute inset-x-0 -top-1 h-[9px]" />
-                  </Separator>
-                  <Panel defaultSize={30} minSize={5}>
-                    <EditorTerminal
-                      command={command}
-                      lines={lines}
-                      onCollapse={() => setTerminalOpen(false)}
-                      onClose={() => setTerminalOpen(false)}
-                    />
-                  </Panel>
-                </>
-              ) : null}
-            </Group>
-          </div>
         )}
       </div>
 
