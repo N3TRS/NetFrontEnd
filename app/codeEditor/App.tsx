@@ -357,6 +357,7 @@ const App = () => {
           <AIChatPanel
             onGetCode={handleGetCode}
             onClose={() => setAiPanelOpen(false)}
+            sessionId={sessionId}
           />
         )}
 
