@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Send, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { analyzeCode } from "../api";
+import { analyzeCode, drawBoard, isDrawRequest } from "../api";
 
 interface AIChatPanelProps {
   onGetCode: () => string;
   onClose: () => void;
+  sessionId: string | null;
 }
 
 type ChatMessage = {
@@ -17,7 +18,7 @@ type ChatMessage = {
   content: string;
 };
 
-export function AIChatPanel({ onGetCode, onClose }: AIChatPanelProps) {
+export function AIChatPanel({ onGetCode, onClose, sessionId }: AIChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -46,11 +47,18 @@ export function AIChatPanel({ onGetCode, onClose }: AIChatPanelProps) {
     setError(null);
 
     try {
-      const code = onGetCode();
-      const { analysis } = await analyzeCode(trimmed, code);
+      let reply: string;
+      if (sessionId && isDrawRequest(trimmed)) {
+        const { response } = await drawBoard(trimmed, sessionId);
+        reply = response;
+      } else {
+        const code = onGetCode();
+        const { analysis } = await analyzeCode(trimmed, code);
+        reply = analysis;
+      }
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: "assistant", content: analysis },
+        { id: crypto.randomUUID(), role: "assistant", content: reply },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -174,7 +182,7 @@ export function AIChatPanel({ onGetCode, onClose }: AIChatPanelProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pregunta sobre tu código…"
+            placeholder="Pregunta sobre código o dibuja en la pizarra…"
             disabled={isLoading}
             className="h-9 flex-1 border-white/10 bg-white/[0.04] text-xs text-white placeholder:text-muted-foreground/60 focus-visible:border-primary/40 focus-visible:ring-primary/20"
           />
