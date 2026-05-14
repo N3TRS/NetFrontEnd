@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Excalidraw } from "@excalidraw/excalidraw";
 import { io, type Socket } from "socket.io-client";
 
-const WS_URL = process.env.NEXT_PUBLIC_URL_SESSIONS;
+const WS_URL = process.env.NEXT_PUBLIC_URL_BOARD;
 
 // Merge remote elements with local, keeping the copy with the higher version.
 // Local-only elements (in-progress strokes not yet synced) are always preserved.
@@ -24,6 +24,7 @@ interface CollaborativeWhiteboardProps {
   token: string | null;
   userEmail: string | null;
   userColor: string | null;
+  onBoardReady?: (getElements: () => readonly unknown[]) => void;
 }
 
 interface RemoteCollaborator {
@@ -37,6 +38,7 @@ export default function CollaborativeWhiteboard({
   token,
   userEmail,
   userColor,
+  onBoardReady,
 }: CollaborativeWhiteboardProps) {
   const excalidrawAPIRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
@@ -196,6 +198,9 @@ export default function CollaborativeWhiteboard({
         excalidrawAPI={(api) => {
           excalidrawAPIRef.current = api;
           setReady(true);
+          onBoardReady?.(() =>
+            (api.getSceneElements() as readonly unknown[]) ?? [],
+          );
         }}
         onChange={(elements) => {
           if (pendingRemoteRef.current > 0) {
