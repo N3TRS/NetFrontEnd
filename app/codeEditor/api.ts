@@ -4,6 +4,9 @@ import type { PermissionLevel } from './lib/permissions';
 const SESSIONS_API_BASE =
   process.env.NEXT_PUBLIC_URL_SESSIONS || 'http://localhost:3002';
 
+const BOARD_API_BASE =
+  process.env.NEXT_PUBLIC_URL_BOARD || 'http://localhost:3003';
+
 
 export class HttpError extends Error {
   constructor(
@@ -23,13 +26,21 @@ interface RequestOptions {
 }
 
 async function request<T>(path: string, opts: RequestOptions): Promise<T> {
+  return requestAt(SESSIONS_API_BASE, path, opts);
+}
+
+async function requestAt<T>(
+  baseUrl: string,
+  path: string,
+  opts: RequestOptions,
+): Promise<T> {
   const { method = 'GET', token, body } = opts;
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
   };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
 
-  const response = await fetch(`${SESSIONS_API_BASE}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -147,12 +158,21 @@ export const executeCode = (
     },
   });
 
+export interface SessionSnapshotRecord {
+  id: string;
+  sessionId: string;
+  savedByEmail: string;
+  language: string;
+  code: string;
+  createdAt: string;
+}
+
 export const saveSessionSnapshot = (
   token: string,
   sessionId: string,
   language: keyof typeof LANGUAGE_VERSIONS,
   code: string,
-) =>
+): Promise<{ snapshot: SessionSnapshotRecord }> =>
   request(`/v1/sessions/${sessionId}/snapshots`, {
     method: 'POST',
     token,
@@ -160,6 +180,37 @@ export const saveSessionSnapshot = (
       language: PISTON_LANGUAGE_MAP[language],
       code,
     },
+  });
+
+export interface BoardSnapshotRecord {
+  id: string;
+  sessionId: string;
+  sessionSnapshotId: string;
+  savedByEmail: string;
+  elements: unknown[];
+  createdAt: string;
+}
+
+export const saveBoardSnapshot = (
+  token: string,
+  sessionId: string,
+  sessionSnapshotId: string,
+  savedByEmail: string,
+  elements: readonly unknown[],
+): Promise<BoardSnapshotRecord> =>
+  requestAt(BOARD_API_BASE, `/v1/boards/${sessionId}/snapshots`, {
+    method: 'POST',
+    token,
+    body: { sessionSnapshotId, savedByEmail, elements },
+  });
+
+export const getBoardSnapshot = (
+  token: string,
+  sessionSnapshotId: string,
+): Promise<BoardSnapshotRecord> =>
+  requestAt(BOARD_API_BASE, `/v1/boards/snapshots/${sessionSnapshotId}`, {
+    method: 'GET',
+    token,
   });
 
 
