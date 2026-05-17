@@ -1,6 +1,6 @@
 # NetFrontEnd
 
-Real-time collaborative IDE for programming in your browser. Write, execute, and share code with other developers simultaneously, without needing to configure your local machine.
+Real-time collaborative IDE for programming in your browser. Write, execute, and share code with other developers simultaneously, without needing to configure your local machine.  
 
 NetFrontEnd is part of **OmniCode** — *The Future of Collaborative Coding*. A platform designed for multiple users to code together in real-time, execute code instantly, and collaborate on projects from anywhere.
 
