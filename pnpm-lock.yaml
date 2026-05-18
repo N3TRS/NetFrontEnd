@@ -89,8 +89,8 @@ importers:
         specifier: 19.2.6
         version: 19.2.6
       react-arborist:
-        specifier: ^3.6.1
-        version: 3.6.1(@types/node@25.8.0)(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: ^3.7.0
+        version: 3.7.0(@types/node@25.8.0)(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react-aria-components:
         specifier: ^1.17.0
         version: 1.17.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -4558,8 +4558,8 @@ packages:
     resolution: {integrity: sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==}
     engines: {node: '>= 0.10'}
 
-  react-arborist@3.6.1:
-    resolution: {integrity: sha512-h2/sPz6PXL79h7mOWjCA6Y5WNUKmA0kL8Uh6RYZQbYk7UOFBd86Jeoga4RjHMBYpOWpBPYrOJOE3HbIPUETp8w==}
+  react-arborist@3.7.0:
+    resolution: {integrity: sha512-gh2SoO0eXQVSP6zxXMGqFeXF+l2uabDGBVn0+RKqy/s7mrG5xGnfM5mhyB67cMVobC3vWYLqe6HGh7ZEZadW/w==}
     peerDependencies:
       react: '>= 16.14'
       react-dom: '>= 16.14'
@@ -10523,7 +10523,7 @@ snapshots:
       iconv-lite: 0.7.2
       unpipe: 1.0.0
 
-  react-arborist@3.6.1(@types/node@25.8.0)(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+  react-arborist@3.7.0(@types/node@25.8.0)(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       react: 19.2.6
       react-dnd: 14.0.5(@types/node@25.8.0)(@types/react@19.2.14)(react@19.2.6)
