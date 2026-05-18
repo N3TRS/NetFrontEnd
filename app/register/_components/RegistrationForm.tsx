@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { User, AtSign, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { User, AtSign, ArrowRight, Eye, EyeOff, Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,14 @@ function IconInput({
   );
 }
 
+const PASSWORD_RULES = [
+  { label: "Mínimo 8 caracteres", test: (p: string) => p.length >= 8 },
+  { label: "Máximo 20 caracteres", test: (p: string) => p.length <= 20 && p.length > 0 },
+  { label: "Al menos una letra mayúscula", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "Al menos una letra minúscula", test: (p: string) => /[a-z]/.test(p) },
+  { label: "Al menos un número o carácter especial", test: (p: string) => /(\d|\W)/.test(p) },
+];
+
 export default function RegistrationForm({
   onTypingChange,
   onPasswordVisibilityChange,
@@ -45,6 +53,7 @@ export default function RegistrationForm({
 }: RegistrationFormProps = {}) {
   const [errors, setErrors] = useState<FieldError>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const { handleGithubLogin } = githubLoginHook();
   const { name, email, password, setName, setEmail, setPassword, handleSignUp, isPending } = signUpHook();
 
@@ -136,6 +145,7 @@ export default function RegistrationForm({
               placeholder="••••••••"
               value={password}
               onChange={handleChange}
+              onFocus={() => setPasswordTouched(true)}
               aria-invalid={!!errors.password}
               className="pr-10"
             />
@@ -156,6 +166,19 @@ export default function RegistrationForm({
               )}
             </button>
           </div>
+          {passwordTouched && (
+            <ul className="mt-1 flex flex-col gap-1">
+              {PASSWORD_RULES.map((rule) => {
+                const met = rule.test(password);
+                return (
+                  <li key={rule.label} className={cn("flex items-center gap-1.5 text-xs", met ? "text-green-500" : "text-slate-400")}>
+                    {met ? <Check className="size-3 shrink-0" /> : <X className="size-3 shrink-0" />}
+                    {rule.label}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           {errors.password && (
             <p className="text-xs text-destructive">{errors.password}</p>
           )}
