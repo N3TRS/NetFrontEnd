@@ -31,14 +31,19 @@ export default function CreateSessionModal({
   onChangeLanguage,
   onClose,
   onCreate,
-}: CreateSessionModalProps) {
+}: Readonly<CreateSessionModalProps>) {
   if (!open) {
     return null;
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-[#0d1117] p-6 shadow-[0_0_60px_-15px_rgba(255,139,16,0.25)] mx-4">
         <div className="flex items-center justify-between">
@@ -56,21 +61,23 @@ export default function CreateSessionModal({
           Ingresa un nombre para la sesion colaborativa.
         </p>
 
-        <label className="mt-5 block text-sm font-medium text-white">Nombre de la sesion</label>
+        <label htmlFor="session-name" className="mt-5 block text-sm font-medium text-white">Nombre de la sesion</label>
         <input
+          id="session-name"
           value={sessionName}
           onChange={(event) => onChangeSessionName(event.target.value)}
           placeholder="Backend pairing"
           className="mt-2 w-full rounded-md border border-purple-400/30 bg-black/30 px-3 py-2 text-white outline-none ring-primary/40 focus:ring"
         />
 
-        <label className="mt-4 block text-sm font-medium text-white">Lenguaje de programacion</label>
+        <label htmlFor="session-language" className="mt-4 block text-sm font-medium text-white">Lenguaje de programacion</label>
         <div className="mt-2 flex items-center gap-2">
           <span
             className="inline-block h-3 w-3 rounded-full"
             style={{ backgroundColor: LANGUAGE_COLORS[language as keyof typeof LANGUAGE_COLORS] }}
           />
           <select
+            id="session-language"
             value={language}
             onChange={(event) => onChangeLanguage(event.target.value)}
             className="w-full rounded-md border border-purple-400/30 bg-black/30 px-3 py-2 text-white outline-none ring-primary/40 focus:ring"

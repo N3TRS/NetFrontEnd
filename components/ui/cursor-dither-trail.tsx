@@ -13,7 +13,7 @@ export function CursorDitherTrail({
   dotSize = 4,
   fadeDuration = 600,
   className = "w-full h-full",
-}: CursorDitherTrailProps) {
+}: Readonly<CursorDitherTrailProps>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export function CursorDitherTrail({
       canvas.width = width;
       canvas.height = height;
     };
-    window.addEventListener("resize", onResize);
+    globalThis.addEventListener("resize", onResize);
 
-    const int = parseInt(trailColor.replace("#", ""), 16);
+    const int = Number.parseInt(trailColor.replace("#", ""), 16);
     const r = (int >> 16) & 255;
     const g = (int >> 8) & 255;
     const b = int & 255;
@@ -67,11 +67,11 @@ export function CursorDitherTrail({
       const y = Math.floor((e.clientY - rect.top) / dotSize) * dotSize;
       paintDot(x, y);
     };
-    window.addEventListener("mousemove", onMove);
+    globalThis.addEventListener("mousemove", onMove);
 
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("resize", onResize);
+      globalThis.removeEventListener("mousemove", onMove);
+      globalThis.removeEventListener("resize", onResize);
       cancelAnimationFrame(rafId);
     };
   }, [trailColor, dotSize, fadeDuration]);

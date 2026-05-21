@@ -22,14 +22,19 @@ export default function JoinSessionModal({
   onChangeInviteCode,
   onClose,
   onJoin,
-}: JoinSessionModalProps) {
+}: Readonly<JoinSessionModalProps>) {
   if (!open) {
     return null;
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Cerrar modal"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-[#0d1117] p-6 shadow-[0_0_60px_-15px_rgba(141,82,255,0.35)] mx-4">
         <div className="flex items-center justify-between">
@@ -47,8 +52,9 @@ export default function JoinSessionModal({
           Escribe el codigo de invitacion para ingresar.
         </p>
 
-        <label className="mt-5 block text-sm font-medium text-white">Codigo de invitacion</label>
+        <label htmlFor="invite-code" className="mt-5 block text-sm font-medium text-white">Codigo de invitacion</label>
         <input
+          id="invite-code"
           value={inviteCode}
           onChange={(event) => onChangeInviteCode(event.target.value.toUpperCase())}
           placeholder="A1B2C3D4"

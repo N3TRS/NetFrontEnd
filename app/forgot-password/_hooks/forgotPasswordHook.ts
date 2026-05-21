@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-export function forgotPasswordHook() {
+export function useForgotPassword() {
   const [email, setEmail] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleForgot = async (e: React.FormEvent) => {
+  const handleForgot = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) return;
 
