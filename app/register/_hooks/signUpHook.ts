@@ -1,20 +1,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface SignUpRequest {
-  name: string;
-  email: string;
-  password: string;
-}
 
-export function signUpHook() {
+export function useSignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsPending(true);
 
@@ -34,7 +29,7 @@ export function signUpHook() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password } as SignUpRequest),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const userData = await response.json();
