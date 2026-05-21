@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export function resetPasswordHook() {
+export function useResetPassword() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -12,7 +12,7 @@ export function resetPasswordHook() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleReset = async (e: React.FormEvent) => {
+  const handleReset = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 

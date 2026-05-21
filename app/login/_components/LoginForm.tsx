@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 import Image from "next/image";
-import { loginHook } from "../_hooks/loginHook";
+import { useLogin } from "../_hooks/loginHook";
 import { githubLoginHook } from "../_hooks/githubLoginHook";
 
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export default function LoginForm({
   onPasswordVisibilityChange,
   onPasswordChange,
 }: LoginFormProps) {
-  const { email, password, setEmail, setPassword, handleLogin, isPending } = loginHook();
+  const { email, password, setEmail, setPassword, handleLogin, isPending } = useLogin();
   const { handleGithubLogin } = githubLoginHook();
   const [showPassword, setShowPassword] = useState(false);
 

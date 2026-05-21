@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 
-import { resetPasswordHook } from "../_hooks/resetPasswordHook";
+import { useResetPassword } from "../_hooks/resetPasswordHook";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ export default function ResetPasswordForm() {
     isPending,
     success,
     error,
-  } = resetPasswordHook();
+  } = useResetPassword();
 
   const [showPassword, setShowPassword] = useState(false);
 

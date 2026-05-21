@@ -151,7 +151,7 @@ export default function SessionsListPage() {
         </div>
       )}
 
-      {!isLoading && !error && sessions && sessions.length === 0 && <EmptySessions onCreateClick={openCreateModal} />}
+      {!isLoading && !error && sessions?.length === 0 && <EmptySessions onCreateClick={openCreateModal} />}
 
       {isSearchEmpty && (
         <div className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground">
@@ -170,9 +170,9 @@ export default function SessionsListPage() {
         </div>
       )}
 
-      {!isLoading && !error && displayed && displayed.length > 0 && (
+      {!isLoading && !error && (displayed?.length ?? 0) > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {displayed.map((session) => (
+          {displayed!.map((session) => (
             <SessionCard
               key={session.id}
               session={session}
@@ -212,12 +212,14 @@ export default function SessionsListPage() {
   );
 }
 
+const SKELETON_KEYS = ["sk-0", "sk-1", "sk-2", "sk-3", "sk-4", "sk-5"] as const;
+
 function SkeletonGrid() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
+      {SKELETON_KEYS.map((id) => (
         <div
-          key={i}
+          key={id}
           className="h-48 animate-pulse rounded-2xl border border-white/10 bg-white/5"
         />
       ))}
@@ -225,7 +227,7 @@ function SkeletonGrid() {
   );
 }
 
-function EmptySessions({ onCreateClick }: { onCreateClick: () => void }) {
+function EmptySessions({ onCreateClick }: Readonly<{ onCreateClick: () => void }>) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#0d1117] px-6 py-16 text-center">
       <Layers className="h-10 w-10 text-muted-foreground" />

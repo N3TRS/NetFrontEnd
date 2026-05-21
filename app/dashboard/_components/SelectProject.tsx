@@ -7,6 +7,8 @@ import { useProject } from "@/app/_contexts/ProjectContext";
 import GithubRepoCard from "./GithubRepoCard";
 import type { GithubRepo } from "../_types/github-repo";
 
+const SKELETON_KEYS = ["sk-0", "sk-1", "sk-2", "sk-3", "sk-4", "sk-5"] as const;
+
 interface SelectProjectProps {
   open: boolean;
   onClose: () => void;
@@ -18,7 +20,7 @@ export default function SelectProject({
   onClose,
   token,
   onRepoSelected,
-}: SelectProjectProps) {
+}: Readonly<SelectProjectProps>) {
   const { repos, loading, error, refetch } = useGithubRepos(token);
   const [search, setSearch] = useState("");
   const [onlyJava, setOnlyJava] = useState(true);
@@ -54,7 +56,9 @@ export default function SelectProject({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
+      <button
+        type="button"
+        aria-label="Cerrar modal"
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
@@ -108,9 +112,9 @@ export default function SelectProject({
         <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2">
           {loading && (
             <div className="flex flex-col gap-2 mt-2">
-              {Array.from({ length: 6 }).map((_, i) => (
+              {SKELETON_KEYS.map((id) => (
                 <div
-                  key={i}
+                  key={id}
                   className="card-noir px-4 py-3 flex items-center justify-between animate-pulse"
                 >
                   <div className="h-4 bg-white/5 rounded w-1/3" />
