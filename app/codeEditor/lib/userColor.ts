@@ -12,7 +12,7 @@ const USER_COLORS = [
 export function hashEmail(email: string): number {
   let h = 0;
   for (let i = 0; i < email.length; i += 1) {
-    h = (h * 31 + email.charCodeAt(i)) | 0;
+    h = Math.trunc(h * 31 + (email.codePointAt(i) ?? 0));
   }
   return Math.abs(h);
 }
