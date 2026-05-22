@@ -24,9 +24,9 @@ export default function Documentation() {
 
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black tracking-tight mb-4">
-            Bienvenido a
+            Bienvenido a{" "}
             <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
-              {" "}OmniCode
+              OmniCode
             </span>
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
@@ -184,7 +184,7 @@ export default function Documentation() {
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-[10px] font-bold text-amber-400">
                         {i + 1}
                       </span>
-                      {step}
+                      {" "}{step}
                     </li>
                   ))}
                 </ol>
