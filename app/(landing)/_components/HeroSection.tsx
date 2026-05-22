@@ -14,7 +14,7 @@ export default function HeroSection() {
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
         </span>
-        Plataforma Colaborativa Multi-Lenguaje
+        {" "}Plataforma Colaborativa Multi-Lenguaje
       </div>
 
       <h1 className="mb-6 max-w-4xl text-5xl font-black leading-tight tracking-tighter md:text-7xl">
