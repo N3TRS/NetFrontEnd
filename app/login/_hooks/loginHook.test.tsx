@@ -93,4 +93,36 @@ describe("useLogin", () => {
       expect(window.alert).toHaveBeenCalledWith("Error en el inicio de sesión"),
     );
   });
+
+  it("alerts generic message when non-ok response has no message", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: jest.fn().mockResolvedValue({}),
+    });
+    render(<Harness />);
+    fireEvent.change(screen.getByLabelText("email"), { target: { value: "u@x.io" } });
+    fireEvent.change(screen.getByLabelText("password"), { target: { value: "pw" } });
+    fireEvent.submit(screen.getByRole("button").closest("form")!);
+    await waitFor(() =>
+      expect(window.alert).toHaveBeenCalledWith("Error en el inicio de sesión"),
+    );
+  });
+
+  it("uses NEXT_PUBLIC_URL_APIGATEWAY env var when set", async () => {
+    const original = process.env.NEXT_PUBLIC_URL_APIGATEWAY;
+    process.env.NEXT_PUBLIC_URL_APIGATEWAY = "http://custom-api:4000";
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({ token: "tk" }),
+    });
+    render(<Harness />);
+    fireEvent.change(screen.getByLabelText("email"), { target: { value: "u@x.io" } });
+    fireEvent.change(screen.getByLabelText("password"), { target: { value: "pw" } });
+    fireEvent.submit(screen.getByRole("button").closest("form")!);
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/dashboard"));
+    expect(fetchMock.mock.calls[0][0]).toContain("http://custom-api:4000");
+    process.env.NEXT_PUBLIC_URL_APIGATEWAY = original;
+  });
 });

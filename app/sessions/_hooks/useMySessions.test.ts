@@ -85,4 +85,30 @@ describe("useMySessions", () => {
     );
     expect(listMock).toHaveBeenCalledTimes(2);
   });
+
+  it("falls back to [] when data.sessions is null/undefined", async () => {
+    listMock.mockResolvedValueOnce({});
+    const { result } = renderHook(() => useMySessions("tk"));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sessions).toEqual([]);
+  });
+
+  it("uses generic message for non-Error thrown", async () => {
+    listMock.mockRejectedValueOnce("plain string error");
+    const { result } = renderHook(() => useMySessions("tk"));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBe("No se pudieron cargar las sesiones.");
+  });
+
+  it("updateSessionName is no-op when sessions is null", () => {
+    const { result } = renderHook(() => useMySessions(null));
+    act(() => result.current.updateSessionName("1", "New"));
+    expect(result.current.sessions).toBeNull();
+  });
+
+  it("removeSession is no-op when sessions is null", () => {
+    const { result } = renderHook(() => useMySessions(null));
+    act(() => result.current.removeSession("1"));
+    expect(result.current.sessions).toBeNull();
+  });
 });
