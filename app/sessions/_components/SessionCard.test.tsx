@@ -170,4 +170,78 @@ describe("SessionCard", () => {
     fireEvent.click(screen.getByText("Cancelar"));
     expect(screen.queryByText("Confirmar")).toBeNull();
   });
+
+  it("rename skips API call when name unchanged", async () => {
+    render(
+      <SessionCard
+        session={sample}
+        currentUserEmail="o@x.io"
+        token="tk"
+        onRenamed={jest.fn()}
+        onDeleted={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTitle("Renombrar"));
+    // don't change input — keep same name
+    fireEvent.keyDown(screen.getByDisplayValue("MySession"), { key: "Enter" });
+    await waitFor(() => expect(renameMock).not.toHaveBeenCalled());
+    // returns to view mode
+    expect(screen.getByText("MySession")).toBeInTheDocument();
+  });
+
+  it("delete shows error and stays in confirm mode on API failure", async () => {
+    deleteMock.mockRejectedValueOnce(new Error("Server error"));
+    render(
+      <SessionCard
+        session={sample}
+        currentUserEmail="o@x.io"
+        token="tk"
+        onRenamed={jest.fn()}
+        onDeleted={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTitle("Eliminar"));
+    fireEvent.click(screen.getByText("Confirmar"));
+    expect(await screen.findByText("Server error")).toBeInTheDocument();
+    // still in confirm mode
+    expect(screen.getByText("Confirmar")).toBeInTheDocument();
+  });
+
+  it("extractErrorMessage uses HttpError body.message for non-409", async () => {
+    renameMock.mockRejectedValueOnce(
+      new HttpError(400, { message: "Bad name" }, "bad"),
+    );
+    render(
+      <SessionCard
+        session={sample}
+        currentUserEmail="o@x.io"
+        token="tk"
+        onRenamed={jest.fn()}
+        onDeleted={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTitle("Renombrar"));
+    const input = screen.getByDisplayValue("MySession");
+    fireEvent.change(input, { target: { value: "NewName" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(await screen.findByText("Bad name")).toBeInTheDocument();
+  });
+
+  it("extractErrorMessage uses generic fallback for unknown error", async () => {
+    renameMock.mockRejectedValueOnce("raw string error");
+    render(
+      <SessionCard
+        session={sample}
+        currentUserEmail="o@x.io"
+        token="tk"
+        onRenamed={jest.fn()}
+        onDeleted={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByTitle("Renombrar"));
+    const input = screen.getByDisplayValue("MySession");
+    fireEvent.change(input, { target: { value: "NewName" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(await screen.findByText("Ocurrio un error.")).toBeInTheDocument();
+  });
 });
